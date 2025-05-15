@@ -47,7 +47,7 @@ const Add = () => {
               style={styles.optionButton}
               onPress={() => {
                 setShowOptions(false);
-                router.push("Screen02/Addownrecipe");
+                router.push("Screens/Addownrecipe");
               }}
             >
               <Ionicons name="create-outline" size={20} color="white" style={styles.optionIcon} />
@@ -58,7 +58,7 @@ const Add = () => {
               style={styles.optionButton}
               onPress={() =>{
                  setShowOptions(false);
-              router.push("Screen02/AddAigenerate");
+              router.push("Screens/AddAigenerate");
               }}
             >
               <Ionicons name="sparkles" size={18} color="white" style={styles.optionIcon} />

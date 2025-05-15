@@ -25,7 +25,7 @@ export default function menu() {
         <Text style={styles.label}>Favorites</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={[styles.item,styles.logoutItem]} onPress={() => router.push("/Screen02/ShoppingCart")}>
+      <TouchableOpacity style={[styles.item,styles.logoutItem]} onPress={() => router.push("/Screens/Cart")}>
         <Ionicons name="cart-outline" size={20} color="#fff" />
         <Text style={styles.label}>Shopping Cart</Text>
       </TouchableOpacity>
@@ -35,7 +35,7 @@ export default function menu() {
         <Text style={styles.label}>Share App</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={[styles.item,styles.logoutItem]} onPress={() => router.push("/Screen02/AboutApp")} >
+      <TouchableOpacity style={[styles.item,styles.logoutItem]} onPress={() => router.push("/Screens/AboutApp")} >
         <Ionicons name="information-circle-outline" size={20} color="#fff" />
         <Text style={styles.label}>About App</Text>
       </TouchableOpacity>

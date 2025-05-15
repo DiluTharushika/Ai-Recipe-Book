@@ -5,7 +5,7 @@ export class profile extends Component {
   render() {
     return (
       <View>
-        <Text> textInComponent </Text>
+        <Text> profile </Text>
       </View>
     )
   }

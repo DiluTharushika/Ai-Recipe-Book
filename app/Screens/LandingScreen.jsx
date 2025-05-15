@@ -83,7 +83,7 @@ export default function LandingScreen() {
         </Text>
       </View>
 
-      <TouchableOpacity style={styles.button} onPress={() => router.push('/(tabs)/home')}>
+      <TouchableOpacity style={styles.button} onPress={() => router.push("/Screens/RecipeGenerator01")}>
         <Text style={styles.buttonText}>GET STARTED</Text>
       </TouchableOpacity>
     </ScrollView>

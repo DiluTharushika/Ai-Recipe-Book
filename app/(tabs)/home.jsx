@@ -27,7 +27,7 @@ export default function Home() {
 
           <TouchableOpacity
             style={styles.iconWrapper}
-            onPress={() => router.push("/Screen02/ShoppingCart")}
+            onPress={() => router.push("/Screens/Cart")}
           >
             <Ionicons name="cart-outline" size={28} color="#ffaa80" />
           </TouchableOpacity>
