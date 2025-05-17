@@ -14,7 +14,8 @@ import React, { useState } from "react";
 import { useRouter } from "expo-router";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { auth, db } from "../../config/firebaseConfig"; // adjust path as needed
+import { auth, db } from "../../config/firebaseConfig";
+import { Feather } from "@expo/vector-icons";
 
 const Register = () => {
   const router = useRouter();
@@ -22,6 +23,8 @@ const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleRegister = async () => {
     if (!username || !email || !password || !confirmPassword) {
@@ -35,11 +38,9 @@ const Register = () => {
     }
 
     try {
-      // Register the user
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Save additional user data to Firestore
       await setDoc(doc(db, "users", user.uid), {
         username: username,
         email: email,
@@ -91,30 +92,48 @@ const Register = () => {
             />
           </View>
 
+          {/* Password Field */}
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Enter Your Password"
-              placeholderTextColor="#9E9E9E"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-            />
+            <View style={styles.passwordInputWrapper}>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Enter Your Password"
+                placeholderTextColor="#9E9E9E"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+              />
+              <TouchableOpacity
+                style={styles.eyeIcon}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Feather name={showPassword ? "eye-off" : "eye"} size={20} color="#555" />
+              </TouchableOpacity>
+            </View>
           </View>
 
+          {/* Confirm Password Field */}
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Confirm Password</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Confirm Your Password"
-              placeholderTextColor="#9E9E9E"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-              autoCapitalize="none"
-            />
+            <View style={styles.passwordInputWrapper}>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Confirm Your Password"
+                placeholderTextColor="#9E9E9E"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry={!showConfirmPassword}
+                autoCapitalize="none"
+              />
+              <TouchableOpacity
+                style={styles.eyeIcon}
+                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                <Feather name={showConfirmPassword ? "eye-off" : "eye"} size={20} color="#555" />
+              </TouchableOpacity>
+            </View>
           </View>
 
           <TouchableOpacity style={styles.button} onPress={handleRegister}>
@@ -195,9 +214,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     backgroundColor: "#ffebcc",
     color: "#000",
+    paddingRight: 40,
+  },
+  passwordInputWrapper: {
+    position: "relative",
+  },
+  eyeIcon: {
+    position: "absolute",
+    right: 10,
+    top: 12,
   },
   button: {
-    backgroundColor: "#FF9900",
+    backgroundColor: "#8B4513",
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: "center",
