@@ -12,6 +12,9 @@ import {
 } from "react-native";
 import React, { useState } from "react";
 import { useRouter } from "expo-router";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { auth, db } from "../../config/firebaseConfig"; // adjust path as needed
 
 const Register = () => {
   const router = useRouter();
@@ -20,19 +23,35 @@ const Register = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  const handleRegister = () => {
-    if (password !== confirmPassword) {
-      Alert.alert("Error", "Passwords do not match!");
-      return;
-    }
-    if (!username || !email || !password) {
+  const handleRegister = async () => {
+    if (!username || !email || !password || !confirmPassword) {
       Alert.alert("Error", "Please fill out all fields!");
       return;
     }
 
-    // Simulate successful registration
-    Alert.alert("Success", "Account created successfully!");
-    router.push("/Login/login");
+    if (password !== confirmPassword) {
+      Alert.alert("Error", "Passwords do not match!");
+      return;
+    }
+
+    try {
+      // Register the user
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Save additional user data to Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        username: username,
+        email: email,
+        createdAt: serverTimestamp(),
+      });
+
+      Alert.alert("Success", "Account created successfully!");
+      router.push("/Login/login");
+    } catch (error) {
+      console.error("Registration error:", error);
+      Alert.alert("Registration Failed", error.message);
+    }
   };
 
   return (

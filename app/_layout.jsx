@@ -1,34 +1,54 @@
-import { Stack } from "expo-router";
+import { Stack, Redirect } from "expo-router";
 import { useFonts } from "expo-font";
-import { ActivityIndicator } from "react-native";
+import { ActivityIndicator, View } from "react-native";
+import { useEffect, useState } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "../config/firebaseConfig"; // Adjust path as needed
+
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
-    outfit: require("./../assets/fonts/Outfit-Regular.ttf"),
-    "outfit-medium": require("./../assets/fonts/Outfit-Medium.ttf"),
-    "outfit-bold": require("./../assets/fonts/Outfit-Bold.ttf"),
+    outfit: require("../assets/fonts/Outfit-Regular.ttf"),
+    "outfit-medium": require("../assets/fonts/Outfit-Medium.ttf"),
+    "outfit-bold": require("../assets/fonts/Outfit-Bold.ttf"),
   });
 
-  if (!fontsLoaded) {
-    return <ActivityIndicator size="large" />;
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setAuthLoading(false);
+    });
+    return unsubscribe;
+  }, []);
+
+  if (!fontsLoaded || authLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#FF9900" />
+      </View>
+    );
   }
 
   return (
-    
-    <Stack>
-      <Stack.Screen name="Screens/SplashScreen" options={{ headerShown: false }} />
-      <Stack.Screen name="Screens/LandingScreen" options={{ headerShown: false }} />
-      <Stack.Screen name="Login/login" options={{ headerShown: false }} />
-      <Stack.Screen name="Login/register" options={{ headerShown: false }} />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="Screens/Addownrecipe" options={{ headerShown: false }} />
-   <Stack.Screen name="Screens/AddAigenerate" options={{ headerShown: false }} />
-   <Stack.Screen name="Screens/Cart" options={{ headerShown: false }} />
-   <Stack.Screen name="Screens/AboutApp" options={{ headerShown: false }} />
-   <Stack.Screen name="Screens/RecipeGenerator01" options={{ headerShown: false }} />
-   <Stack.Screen name="Screens/RecipeGenerator02" options={{ headerShown: false }} />
-   <Stack.Screen name="Screens/RecipeGenerator03" options={{ headerShown: false }} />
-   <Stack.Screen name="Screens/GenerateScreen" options={{ headerShown: false }} />
-   </Stack>
-   
+    <Stack
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      {/* If user is logged in, redirect to your protected routes */}
+      {user ? (
+        <>
+          {/* Redirect to your main tab screen or home screen */}
+          <Redirect href="/Screens/RecipeGenerator01" />
+        </>
+      ) : (
+        <>
+          {/* Redirect to the landing/login flow */}
+          <Redirect href="/Screens/LandingScreen" />
+        </>
+      )}
+    </Stack>
   );
 }

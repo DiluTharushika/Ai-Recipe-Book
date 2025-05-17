@@ -1,14 +1,35 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import RecipeListByCategory from "../components/RecipeListByCategory";
 import AutoImageSlider from "../components/AutoImageSlider";
 import SearchBar from "../components/SearchBar";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { auth, db } from "../../config/firebaseConfig"; // make sure `db` is Firestore instance
+import { doc, getDoc } from "firebase/firestore";
 
 export default function Home() {
   const router = useRouter();
-  const [username, setUsername] = useState("Guest"); // Default to Guest
+  const [username, setUsername] = useState("Guest");
+
+  useEffect(() => {
+    const fetchUsername = async () => {
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            setUsername(data.username || "User");
+          }
+        }
+      } catch (error) {
+        console.log("Error fetching username:", error);
+      }
+    };
+
+    fetchUsername();
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -59,11 +80,11 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: "#262626",
     zIndex: 10,
-    paddingBottom: 10,
+    paddingBottom: 0,
   },
   scrollContainer: {
     paddingTop: 120,
-    paddingHorizontal: 20,
+    paddingHorizontal: 7,
   },
   headerRow: {
     flexDirection: "row",
@@ -74,7 +95,7 @@ const styles = StyleSheet.create({
   profileSection: {
     flexDirection: "row",
     alignItems: "center",
-    marginLeft: 10,
+    marginLeft: 8,
     marginTop: 0,
   },
   greetingText: {

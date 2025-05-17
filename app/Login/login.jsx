@@ -12,6 +12,8 @@ import {
 } from "react-native";
 import React, { useState } from "react";
 import { useRouter } from "expo-router";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../../config/firebaseConfig"; // make sure this path is correct
 
 const Login = () => {
   const router = useRouter();
@@ -24,8 +26,18 @@ const Login = () => {
       return;
     }
 
-    // TODO: Replace this with your Supabase login logic
-    Alert.alert("Login", "Login logic not implemented.");
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      console.log("Logged in:", user.email);
+
+      // Navigate to Home (update route if different)
+      router.replace("/Screens/RecipeGenerator01"); // or your main screen
+    } catch (error) {
+      console.error("Login error:", error);
+      Alert.alert("Login Failed", error.message);
+    }
   };
 
   const navigateToSignUp = () => {
