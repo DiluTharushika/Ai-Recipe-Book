@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     alignItems: 'center',
     height: 40,
-    marginTop:100,
+    marginTop:140,
   },
   icon: {
     marginRight: 10,

@@ -6,7 +6,8 @@ const recipes = [
       rating: 4.5,
       details: 'A delicious chicken burger with fresh lettuce and cheese.',
       category: 'FastFood', // Added category
-      
+     ingredients: ['Chicken', 'Rice', 'Spices', 'Onion'],
+    instructions: 'Cook chicken with spices. Add to cooked rice. Layer and steam for 10 mins.', 
     },
     {
       id: '2',
@@ -15,6 +16,8 @@ const recipes = [
       rating: 4.7,
       details: 'A healthy vegan salad with mixed greens and dressing.',
       category: 'Dinner',
+      ingredients: ['Chicken', 'Rice', 'Spices', 'Onion'],
+    instructions: 'Cook chicken with spices. Add to cooked rice. Layer and steam for 10 mins.',
     },
    /* {
       id: '3',

@@ -44,7 +44,7 @@ const ImageSlider = () => {
 const styles = StyleSheet.create({
   container: {
     alignItems: "center", // Center horizontally
-    top: 25, // Adjust top margin
+    top: 60, // Adjust top margin
     marginBottom: 0,
     position: "absolute",
   },

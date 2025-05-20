@@ -1,39 +1,52 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
-import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  RefreshControl,
+} from "react-native";
+import React, { useEffect, useState, useCallback } from "react";
 import RecipeListByCategory from "../components/RecipeListByCategory";
 import AutoImageSlider from "../components/AutoImageSlider";
 import SearchBar from "../components/SearchBar";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { auth, db } from "../../config/firebaseConfig"; // make sure `db` is Firestore instance
+import { auth, db } from "../../config/firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 
 export default function Home() {
   const router = useRouter();
   const [username, setUsername] = useState("Guest");
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchUsername = async () => {
+    try {
+      const user = auth.currentUser;
+      if (user) {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          setUsername(data.username || "User");
+        }
+      }
+    } catch (error) {
+      console.log("Error fetching username:", error);
+    }
+  };
 
   useEffect(() => {
-    const fetchUsername = async () => {
-      try {
-        const user = auth.currentUser;
-        if (user) {
-          const userDoc = await getDoc(doc(db, "users", user.uid));
-          if (userDoc.exists()) {
-            const data = userDoc.data();
-            setUsername(data.username || "User");
-          }
-        }
-      } catch (error) {
-        console.log("Error fetching username:", error);
-      }
-    };
-
     fetchUsername();
+  }, []);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchUsername().finally(() => setRefreshing(false));
   }, []);
 
   return (
     <View style={styles.container}>
-      {/* Fixed Header and Search Bar */}
+      {/* Header */}
       <View style={styles.fixedHeader}>
         <View style={styles.headerRow}>
           <View style={styles.profileSection}>
@@ -55,10 +68,13 @@ export default function Home() {
         </View>
       </View>
 
-      {/* Scrollable Content */}
+      {/* Scrollable Content with Pull-to-Refresh */}
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
         <AutoImageSlider />
         <SearchBar />
@@ -75,7 +91,7 @@ const styles = StyleSheet.create({
   },
   fixedHeader: {
     position: "absolute",
-    top: 0,
+    top: 12,
     left: 0,
     right: 0,
     backgroundColor: "#262626",

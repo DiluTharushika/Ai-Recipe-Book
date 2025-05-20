@@ -79,10 +79,12 @@ export default function Category() {
             </TouchableOpacity>
 
             {/* Large Recipe Image */}
+            <TouchableOpacity onPress={() => navigation.navigate('RecipeView', { recipe: item })}>
             <Image source={item.image} style={styles.recipeImage} />
-
+           
             <Text style={styles.recipeName}>{item.name}</Text>
             <Text style={styles.recipeDetails}>{item.details}</Text>
+           </TouchableOpacity>
           </View>
         )}
       />

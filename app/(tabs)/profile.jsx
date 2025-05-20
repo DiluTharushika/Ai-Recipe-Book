@@ -9,6 +9,7 @@ import { auth, db } from "../../config/firebaseConfig";
 import { signOut } from "firebase/auth";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import * as ImagePicker from "expo-image-picker";
+import { uploadImageToCloudinary } from "../../config/cloudinary"; // Make sure this file exists
 
 export default function Profile() {
   const router = useRouter();
@@ -34,7 +35,7 @@ export default function Profile() {
         const userData = docSnap.data();
         setUsername(userData.username || "User");
         setEmail(userData.email || user.email);
-        // Not loading profile image from DB because no Firebase Storage
+        setProfileImage(userData.profileImage || null);
       } else {
         console.log("No such document!");
       }
@@ -51,8 +52,22 @@ export default function Profile() {
     });
 
     if (!result.canceled) {
-      setProfileImage(result.assets[0].uri);
-      Alert.alert("Note", "This image is local only and not saved online.");
+      const imageUri = result.assets[0].uri;
+
+      try {
+        const cloudinaryUrl = await uploadImageToCloudinary(imageUri);
+
+        // Save to Firestore
+        await updateDoc(doc(db, "users", user.uid), {
+          profileImage: cloudinaryUrl,
+        });
+
+        setProfileImage(cloudinaryUrl);
+        Alert.alert("Success", "Profile image updated!");
+      } catch (error) {
+        console.error("Upload failed:", error);
+        Alert.alert("Error", "Failed to upload image.");
+      }
     }
   };
 
@@ -198,7 +213,6 @@ const styles = StyleSheet.create({
   infoText: {
     color: '#fff',
     fontSize: 16,
-    //fontWeight: 'bold',
     marginTop: 2,
   },
   input: {

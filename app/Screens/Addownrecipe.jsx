@@ -1,14 +1,19 @@
-import {
-  View, Text, TextInput, Button, TouchableOpacity, Image,
-  Alert, ScrollView, StyleSheet, TouchableWithoutFeedback,
-  KeyboardAvoidingView, Platform, Keyboard, PermissionsAndroid
-} from 'react-native';
 import React, { useState } from 'react';
-import { launchImageLibrary } from 'react-native-image-picker';
+import {
+  View, Text, TextInput, TouchableOpacity, Image,
+  Alert, ScrollView, StyleSheet, TouchableWithoutFeedback,
+  KeyboardAvoidingView, Platform, Keyboard
+} from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { db } from '../../config/firebaseConfig';
+import { collection, addDoc, Timestamp } from 'firebase/firestore';
+import { Picker } from '@react-native-picker/picker';
+import { uploadImageToCloudinary } from '../../config/cloudinary'; // Your upload function
 
 export default function Addownrecipe() {
   const [recipeName, setRecipeName] = useState('');
-  const [imageUri, setImageUri] = useState(null);
+  const [category, setCategory] = useState('');
+  const [imageUrl, setImageUrl] = useState(null);
   const [ingredientName, setIngredientName] = useState('');
   const [ingredientMeasurement, setIngredientMeasurement] = useState('');
   const [ingredientCost, setIngredientCost] = useState('');
@@ -16,45 +21,38 @@ export default function Addownrecipe() {
   const [instructions, setInstructions] = useState('');
 
   const requestPermission = async () => {
-    if (Platform.OS === 'android') {
-      const granted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
-        {
-          title: 'Storage Permission',
-          message: 'App needs access to your storage to select an image.',
-          buttonNeutral: 'Ask Me Later',
-          buttonNegative: 'Cancel',
-          buttonPositive: 'OK',
-        }
-      );
-      return granted === PermissionsAndroid.RESULTS.GRANTED;
+    if (Platform.OS !== 'web') {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Sorry, we need camera roll permissions to make this work!');
+        return false;
+      }
     }
     return true;
   };
 
   const pickImage = async () => {
     const hasPermission = await requestPermission();
-    if (!hasPermission) {
-      Alert.alert('Permission Denied', 'You need to allow access to your photos.');
-      return;
-    }
+    if (!hasPermission) return;
+
     try {
-      const result = await launchImageLibrary({
-        mediaType: 'photo',
-        quality: 0.5,
-        includeBase64: false,
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.7,
       });
 
-      if (result.didCancel) {
-        console.log('User cancelled image picker');
-      } else if (result.errorMessage) {
-        console.log('ImagePicker Error:', result.errorMessage);
-        Alert.alert('Error', result.errorMessage);
-      } else if (result.assets && result.assets.length > 0) {
-        setImageUri(result.assets[0].uri);
-        console.log('Selected Image URI:', result.assets[0].uri);
-      } else {
-        console.log('Unexpected response:', result);
+      if (!result.canceled) {
+        const localUri = result.assets[0].uri;
+        // Upload to Cloudinary
+        try {
+          const uploadedUrl = await uploadImageToCloudinary(localUri);
+          setImageUrl(uploadedUrl);
+          Alert.alert('Success', 'Image uploaded successfully');
+        } catch (uploadError) {
+          console.error('Cloudinary upload error:', uploadError);
+          Alert.alert('Upload Failed', 'Failed to upload image to Cloudinary');
+        }
       }
     } catch (error) {
       console.error('Error picking image:', error);
@@ -78,32 +76,40 @@ export default function Addownrecipe() {
     setIngredientsList(updatedList);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (!recipeName || !category || ingredientsList.length === 0 || !instructions) {
+      Alert.alert('Error', 'Please fill in all fields including category before submitting.');
+      return;
+    }
+
     const recipeDetails = {
       name: recipeName,
-      image: imageUri,
+      category,
+      image: imageUrl || '',
       ingredients: ingredientsList,
-      instructions: instructions,
+      instructions,
+      createdAt: Timestamp.now(),
     };
-    console.log(recipeDetails);
-    setRecipeName('');
-    setImageUri(null);
-    setIngredientsList([]);
-    setInstructions('');
+
+    try {
+      await addDoc(collection(db, 'recipes'), recipeDetails);
+      Alert.alert('Success', 'Recipe added successfully!');
+      // Reset form
+      setRecipeName('');
+      setCategory('');
+      setImageUrl(null);
+      setIngredientsList([]);
+      setInstructions('');
+    } catch (error) {
+      console.error('Error adding recipe:', error);
+      Alert.alert('Error', 'Failed to add recipe');
+    }
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={{ flex: 1 }}
-    >
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <ScrollView
-          style={styles.container}
-          contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }}
-          keyboardShouldPersistTaps="always"
-          keyboardDismissMode="on-drag"
-        >
+        <ScrollView style={styles.container} contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }}>
           <View>
             <Text style={styles.title}>Add Recipe</Text>
 
@@ -116,11 +122,28 @@ export default function Addownrecipe() {
               onChangeText={setRecipeName}
             />
 
+            <Text style={styles.label}>Category:</Text>
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={category}
+                onValueChange={(itemValue) => setCategory(itemValue)}
+                style={styles.picker}
+                prompt="Select Category"
+              >
+                <Picker.Item label="Select category" value="" />
+                <Picker.Item label="Breakfast" value="breakfast" />
+                <Picker.Item label="Lunch" value="lunch" />
+                <Picker.Item label="Dinner" value="dinner" />
+                <Picker.Item label="Fast Food" value="fastfood" />
+                <Picker.Item label="Dessert" value="dessert" />
+              </Picker>
+            </View>
+
             <Text style={styles.label}>Recipe Image:</Text>
             <TouchableOpacity onPress={pickImage} style={styles.brownButton}>
-              <Text style={styles.buttonText}>{imageUri ? 'Change Image' : 'Pick an Image'}</Text>
+              <Text style={styles.buttonText}>{imageUrl ? 'Change Image' : 'Pick an Image'}</Text>
             </TouchableOpacity>
-            {imageUri && <Image source={{ uri: imageUri }} style={styles.recipeImage} />}
+            {imageUrl && <Image source={{ uri: imageUrl }} style={styles.recipeImage} />}
 
             <Text style={styles.label}>Ingredient Name:</Text>
             <TextInput
@@ -130,6 +153,7 @@ export default function Addownrecipe() {
               value={ingredientName}
               onChangeText={setIngredientName}
             />
+
             <Text style={styles.label}>Ingredient Measurement:</Text>
             <TextInput
               style={styles.input}
@@ -138,7 +162,17 @@ export default function Addownrecipe() {
               value={ingredientMeasurement}
               onChangeText={setIngredientMeasurement}
             />
-            
+
+            <Text style={styles.label}>Ingredient Cost (Rs.):</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter cost"
+              placeholderTextColor="#888"
+              keyboardType="numeric"
+              value={ingredientCost}
+              onChangeText={setIngredientCost}
+            />
+
             <TouchableOpacity onPress={handleAddIngredient} style={styles.brownButton}>
               <Text style={styles.buttonText}>Add Ingredient</Text>
             </TouchableOpacity>
@@ -176,59 +210,22 @@ export default function Addownrecipe() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#1e1e1e',
-    padding: 20,
-  },
-  title: {
-    color: '#f4c38d',
-    fontSize: 25,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  label: {
-    color: '#d2b48c',
-    fontSize: 16,
-    marginTop: 10,
-  },
-  input: {
+  container: { flex: 1, backgroundColor: '#1e1e1e', padding: 20 },
+  title: { color: '#f4c38d', fontSize: 25, fontWeight: 'bold', marginBottom: 10 },
+  label: { color: '#d2b48c', fontSize: 16, marginTop: 10 },
+  input: { backgroundColor: '#333', color: '#fff', padding: 10, borderRadius: 10, marginTop: 5 },
+  brownButton: { backgroundColor: '#8b5e3c', padding: 12, marginTop: 15, borderRadius: 10, alignItems: 'center' },
+  buttonText: { color: '#fff', fontWeight: 'bold' },
+  recipeImage: { width: '100%', height: 200, borderRadius: 10, marginTop: 10 },
+  ingredientRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: '#444' },
+  ingredientText: { color: '#fff', fontSize: 14 },
+  deleteText: { color: 'red', fontWeight: 'bold' },
+  pickerContainer: {
     backgroundColor: '#333',
-    color: '#fff',
-    padding: 10,
     borderRadius: 10,
     marginTop: 5,
   },
-  brownButton: {
-    backgroundColor: '#8b5e3c',
-    padding: 12,
-    marginTop: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  buttonText: {
+  picker: {
     color: '#fff',
-    fontWeight: 'bold',
-  },
-  recipeImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 10,
-    marginTop: 10,
-  },
-  ingredientRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 5,
-    borderBottomWidth: 1,
-    borderBottomColor: '#444',
-  },
-  ingredientText: {
-    color: '#fff',
-    fontSize: 14,
-  },
-  deleteText: {
-    color: 'red',
-    fontWeight: 'bold',
   },
 });
