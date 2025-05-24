@@ -18,7 +18,8 @@ export default function Favourite() {
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
             <View style={styles.recipeCard}>
-              <Image source={item.image} style={styles.recipeImage} />
+              {/* ✅ FIX: Load image from URL properly */}
+              <Image source={{ uri: item.image }} style={styles.recipeImage} />
               <Text style={styles.recipeName}>{item.name}</Text>
               <Text style={styles.recipeDetails}>{item.details}</Text>
             </View>

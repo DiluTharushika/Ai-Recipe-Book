@@ -13,12 +13,13 @@ import SearchBar from "../components/SearchBar";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { auth, db } from "../../config/firebaseConfig";
-import { doc, getDoc } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 
 export default function Home() {
   const router = useRouter();
   const [username, setUsername] = useState("Guest");
   const [refreshing, setRefreshing] = useState(false);
+  const [allRecipes, setAllRecipes] = useState([]);
 
   const fetchUsername = async () => {
     try {
@@ -35,13 +36,29 @@ export default function Home() {
     }
   };
 
-  useEffect(() => {
-    fetchUsername();
-  }, []);
+  const fetchRecipes = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, "recipes"));
+      const recipeList = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setAllRecipes(recipeList);
+    } catch (error) {
+      console.error("Error fetching recipes:", error);
+    }
+  };
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    fetchUsername().finally(() => setRefreshing(false));
+    Promise.all([fetchUsername(), fetchRecipes()]).finally(() =>
+      setRefreshing(false)
+    );
+  }, []);
+
+  useEffect(() => {
+    fetchUsername();
+    fetchRecipes();
   }, []);
 
   return (
@@ -78,7 +95,7 @@ export default function Home() {
       >
         <AutoImageSlider />
         <SearchBar />
-        <RecipeListByCategory />
+        <RecipeListByCategory recipes={allRecipes} />
       </ScrollView>
     </View>
   );

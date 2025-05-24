@@ -1,50 +1,71 @@
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import {
+  View, Text, StyleSheet, FlatList,
+  TouchableOpacity, Image
+} from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import recipes from '../components/RecipeData'; // Import recipe data
-
-const categories = ['All','AI Generated', 'BreakFast', 'Lunch', 'FastFood', 'Dinner', 'Dessert'];
+import { useRouter } from 'expo-router';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../../config/firebaseConfig';
 
 export default function Category() {
+  const router = useRouter();
+
+  const allPossibleCategories = ['All', 'AI Generated', 'BreakFast', 'Lunch', 'FastFood', 'Dinner', 'Dessert'];
+
+  const [allRecipes, setAllRecipes] = useState([]);
   const [likedRecipes, setLikedRecipes] = useState({});
   const [favorites, setFavorites] = useState([]);
-  const [aiGeneratedRecipes, setAiGeneratedRecipes] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const navigation = useNavigation(); // Get navigation instance
+
+  useEffect(() => {
+    const fetchRecipes = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, 'recipes'));
+        const recipeList = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setAllRecipes(recipeList);
+      } catch (error) {
+        console.error('Error fetching recipes:', error);
+      }
+    };
+
+    fetchRecipes();
+  }, []);
 
   const toggleLike = (recipe) => {
     setLikedRecipes((prev) => {
       const updatedLikes = { ...prev, [recipe.id]: !prev[recipe.id] };
-
-      // Update favorites based on the new liked state
       setFavorites((prevFavorites) => {
-        const isLiked = updatedLikes[recipe.id]; // Use updated state
+        const isLiked = updatedLikes[recipe.id];
         const updatedFavorites = isLiked
-          ? [...prevFavorites, recipe] // Add to favorites
-          : prevFavorites.filter((fav) => fav.id !== recipe.id); // Remove if unliked
-
-        // Navigate with updated favorites
-        navigation.navigate('favourite', { favorites: updatedFavorites });
+          ? [...prevFavorites, recipe]
+          : prevFavorites.filter((fav) => fav.id !== recipe.id);
+        router.push({
+          pathname: '/Screens/favourite',
+          params: { favorites: JSON.stringify(updatedFavorites) },
+        });
         return updatedFavorites;
       });
-
       return updatedLikes;
     });
   };
 
   const filteredRecipes =
     selectedCategory === 'All'
-      ? recipes
-      : selectedCategory === 'AI Generated'
-      ? aiGeneratedRecipes
-      : recipes.filter((recipe) => recipe.category === selectedCategory);
+      ? allRecipes
+      : allRecipes.filter(
+          (recipe) =>
+            recipe.category?.toLowerCase() === selectedCategory.toLowerCase()
+        );
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Categories</Text>
       <FlatList
-        data={categories}
+        data={allPossibleCategories}
         horizontal
         showsHorizontalScrollIndicator={false}
         keyExtractor={(item) => item}
@@ -69,8 +90,10 @@ export default function Category() {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View style={styles.recipeCard}>
-            {/* Heart Icon Positioned at the Top Right */}
-            <TouchableOpacity style={styles.heartIcon} onPress={() => toggleLike(item)}>
+            <TouchableOpacity
+              style={styles.heartIcon}
+              onPress={() => toggleLike(item)}
+            >
               <FontAwesome
                 name="heart"
                 size={22}
@@ -78,15 +101,23 @@ export default function Category() {
               />
             </TouchableOpacity>
 
-            {/* Large Recipe Image */}
-            <TouchableOpacity onPress={() => navigation.navigate('RecipeView', { recipe: item })}>
-            <Image source={item.image} style={styles.recipeImage} />
-           
-            <Text style={styles.recipeName}>{item.name}</Text>
-            <Text style={styles.recipeDetails}>{item.details}</Text>
-           </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() =>
+                router.push({
+                  pathname: '/Screens/RecipeDetail',
+                  params: { id: item.id }, // ✅ Pass only the ID
+                })
+              }
+            >
+              <Image source={{ uri: item.image }} style={styles.recipeImage} />
+              <Text style={styles.recipeName}>{item.name}</Text>
+              <Text style={styles.recipeDetails}>{item.details}</Text>
+            </TouchableOpacity>
           </View>
         )}
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>No recipes found in this category.</Text>
+        }
       />
     </View>
   );
@@ -95,6 +126,7 @@ export default function Category() {
 const styles = StyleSheet.create({
   container: {
     marginTop: 2,
+    paddingBottom: 20,
   },
   title: {
     color: '#FFFFFF',
@@ -107,7 +139,7 @@ const styles = StyleSheet.create({
     fontFamily: 'outfit-medium',
     fontSize: 20,
     marginBottom: 10,
-    top: '3%',
+    marginTop: 10,
   },
   categoryItem: {
     backgroundColor: '#4d4d4d',
@@ -139,11 +171,12 @@ const styles = StyleSheet.create({
     top: 14,
     right: 14,
     zIndex: 1,
-    backgroundColor:'#333',
-    width:30,
-    height:30,
+    backgroundColor: '#333',
+    width: 30,
+    height: 30,
     borderRadius: 10,
-
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   recipeImage: {
     width: '100%',
@@ -161,5 +194,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: 'outfit',
     marginTop: 3,
+  },
+  emptyText: {
+    color: '#aaa',
+    fontSize: 16,
+    padding: 20,
+    textAlign: 'center',
   },
 });

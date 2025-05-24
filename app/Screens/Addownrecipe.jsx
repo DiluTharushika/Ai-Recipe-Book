@@ -5,7 +5,7 @@ import {
   KeyboardAvoidingView, Platform, Keyboard
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { db } from '../../config/firebaseConfig';
+import { db, auth } from '../../config/firebaseConfig'; // ✅ Import auth here
 import { collection, addDoc, Timestamp } from 'firebase/firestore';
 import { Picker } from '@react-native-picker/picker';
 import { uploadImageToCloudinary } from '../../config/cloudinary'; // Your upload function
@@ -82,12 +82,19 @@ export default function Addownrecipe() {
       return;
     }
 
+    const user = auth.currentUser;
+    if (!user) {
+      Alert.alert('Error', 'User not authenticated.');
+      return;
+    }
+
     const recipeDetails = {
       name: recipeName,
       category,
       image: imageUrl || '',
       ingredients: ingredientsList,
       instructions,
+      createdBy: user.uid, // ✅ Added this field
       createdAt: Timestamp.now(),
     };
 
@@ -220,12 +227,6 @@ const styles = StyleSheet.create({
   ingredientRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: '#444' },
   ingredientText: { color: '#fff', fontSize: 14 },
   deleteText: { color: 'red', fontWeight: 'bold' },
-  pickerContainer: {
-    backgroundColor: '#333',
-    borderRadius: 10,
-    marginTop: 5,
-  },
-  picker: {
-    color: '#fff',
-  },
+  pickerContainer: { backgroundColor: '#333', borderRadius: 10, marginTop: 5 },
+  picker: { color: '#fff' },
 });
