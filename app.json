@@ -37,6 +37,10 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "GROQ_API_KEY": "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",
+      "UNSPLASH_ACCESS_KEY":"Cr-sfIIhFQ7_oTzC4ye0adAhfN3jDn5E8bOqXK5_nGc"
     }
   }
 }

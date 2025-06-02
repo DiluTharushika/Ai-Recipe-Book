@@ -1,7 +1,6 @@
 import { View, Text } from 'react-native'
-import React from 'react'
 import Category from './Category'
-
+console.log('Category:', Category)
 export default function RecipeListByCategory() {
   return (
     <View>

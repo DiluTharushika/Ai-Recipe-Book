@@ -7,14 +7,14 @@ import {
   RefreshControl,
 } from "react-native";
 import React, { useEffect, useState, useCallback } from "react";
-import RecipeListByCategory from "../components/RecipeListByCategory";
+//import RecipeListByCategory from "../components/RecipeListByCategory";
 import AutoImageSlider from "../components/AutoImageSlider";
 import SearchBar from "../components/SearchBar";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { auth, db } from "../../config/firebaseConfig";
 import { collection, doc, getDoc, getDocs } from "firebase/firestore";
-
+import Category from "../components/Category";
 export default function Home() {
   const router = useRouter();
   const [username, setUsername] = useState("Guest");
@@ -95,7 +95,7 @@ export default function Home() {
       >
         <AutoImageSlider />
         <SearchBar />
-        <RecipeListByCategory recipes={allRecipes} />
+        <Category recipes={allRecipes} />
       </ScrollView>
     </View>
   );

@@ -1,10 +1,39 @@
-import { View, Text, StyleSheet, FlatList, Image } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
 import React from 'react';
-import { useRoute } from '@react-navigation/native';
+import { useRoute, useNavigation } from '@react-navigation/native';
 
 export default function Favourite() {
   const route = useRoute();
-  const favorites = route.params?.favorites || []; // Get favorite recipes from navigation params
+  const navigation = useNavigation();
+
+  // Safely get favorites param:
+  // If favorites is already an array, use it directly.
+  // If it's a JSON string, parse it.
+  // Otherwise default to empty array.
+  let favorites = [];
+
+  const favoritesParam = route.params?.favorites;
+
+  if (Array.isArray(favoritesParam)) {
+    favorites = favoritesParam;
+  } else if (typeof favoritesParam === 'string' && favoritesParam.trim() !== '') {
+    try {
+      favorites = JSON.parse(favoritesParam);
+    } catch (error) {
+      console.warn('Failed to parse favorites JSON:', error);
+      favorites = [];
+    }
+  } else {
+    favorites = [];
+  }
+
+  const handleRecipePress = (item) => {
+    if (item._isAI) {
+      navigation.navigate('Screens/RecipeDetail', { recipe: JSON.stringify(item) });
+    } else {
+      navigation.navigate('Screens/RecipeDetail', { id: item.id });
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -17,12 +46,11 @@ export default function Favourite() {
           data={favorites}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
-            <View style={styles.recipeCard}>
-              {/* ✅ FIX: Load image from URL properly */}
+            <TouchableOpacity onPress={() => handleRecipePress(item)} style={styles.recipeCard}>
               <Image source={{ uri: item.image }} style={styles.recipeImage} />
-              <Text style={styles.recipeName}>{item.name}</Text>
-              <Text style={styles.recipeDetails}>{item.details}</Text>
-            </View>
+              <Text style={styles.recipeName}>{item.name || item.title || 'Unnamed Recipe'}</Text>
+              <Text style={styles.recipeDetails}>{item.details || 'No details available.'}</Text>
+            </TouchableOpacity>
           )}
         />
       )}

@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
+import { useRecipePreferences } from "../../context/RecipeContext"; // adjust the path if needed
 
 const cuisines = [
   "Italian 🍕", "Sri Lankan 🍛", "Chinese 🍜", "Indian 🍲",
@@ -10,6 +11,7 @@ const cuisines = [
 export default function RecipeGenerator01() {
   const router = useRouter();
   const [selectedCuisines, setSelectedCuisines] = useState([]);
+  const { preferences, setPreferences } = useRecipePreferences();
 
   const toggleCuisine = (cuisine) => {
     if (selectedCuisines.includes(cuisine)) {
@@ -17,6 +19,14 @@ export default function RecipeGenerator01() {
     } else {
       setSelectedCuisines([...selectedCuisines, cuisine]);
     }
+  };
+
+  const handleNext = () => {
+    setPreferences(prev => ({
+      ...prev,
+      cuisines: selectedCuisines,
+    }));
+    router.push("/Screens/RecipeGenerator02");
   };
 
   return (
@@ -38,7 +48,8 @@ export default function RecipeGenerator01() {
       })}
       <TouchableOpacity
         style={styles.nextBtn}
-        onPress={() => router.push("/Screens/RecipeGenerator02")}
+        onPress={handleNext}
+        disabled={selectedCuisines.length === 0}
       >
         <Text style={styles.nextText}>Next</Text>
       </TouchableOpacity>

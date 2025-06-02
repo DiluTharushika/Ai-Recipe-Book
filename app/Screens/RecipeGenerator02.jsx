@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
+import { useRecipePreferences } from "../../context/RecipeContext"; // adjust if needed
 
 const preferences = [
   "Vegetarian 🥦 (No meat, but allows dairy & eggs)",
@@ -13,6 +14,17 @@ const preferences = [
 export default function RecipeGenerator02() {
   const router = useRouter();
   const [selected, setSelected] = useState(null);
+  const { setPreferences } = useRecipePreferences();
+
+  const handleNext = () => {
+    if (selected) {
+      setPreferences(prev => ({
+        ...prev,
+        diet: selected,
+      }));
+      router.push("/Screens/RecipeGenerator03");
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -32,8 +44,9 @@ export default function RecipeGenerator02() {
         );
       })}
       <TouchableOpacity
-        style={styles.nextBtn}
-        onPress={() => router.push("/Screens/RecipeGenerator03")}
+        style={[styles.nextBtn, !selected && { backgroundColor: "#555" }]}
+        onPress={handleNext}
+        disabled={!selected}
       >
         <Text style={styles.nextText}>Next</Text>
       </TouchableOpacity>

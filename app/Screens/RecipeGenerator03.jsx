@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
+import { useRecipePreferences } from "../../context/RecipeContext"; // adjust path if needed
 
 const meals = [
   "🍞 Breakfast only",
@@ -12,6 +13,17 @@ const meals = [
 export default function RecipeGenerator03() {
   const router = useRouter();
   const [selectedMeal, setSelectedMeal] = useState(null);
+  const { setPreferences } = useRecipePreferences();
+
+  const handleGenerate = () => {
+    if (selectedMeal) {
+      setPreferences(prev => ({
+        ...prev,
+        mealsPerDay: selectedMeal,
+      }));
+      router.push("/Screens/GenerateScreen");
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -31,8 +43,9 @@ export default function RecipeGenerator03() {
         );
       })}
       <TouchableOpacity
-        style={styles.generateBtn}
-        onPress={() => router.push("/Screens/GenerateScreen")}
+        style={[styles.generateBtn, !selectedMeal && { backgroundColor: "#555" }]}
+        onPress={handleGenerate}
+        disabled={!selectedMeal}
       >
         <Text style={styles.generateText}>Generate</Text>
       </TouchableOpacity>

@@ -4,7 +4,8 @@ import { ActivityIndicator, View } from "react-native";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../config/firebaseConfig"; // Adjust path as needed
-
+import { RecipeProvider } from "../context/RecipeContext";
+import { CartProvider } from '../context/CartContext';
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     outfit: require("../assets/fonts/Outfit-Regular.ttf"),
@@ -32,6 +33,8 @@ export default function RootLayout() {
   }
 
   return (
+    <CartProvider>
+     <RecipeProvider>
     <Stack
       screenOptions={{
         headerShown: false,
@@ -50,5 +53,7 @@ export default function RootLayout() {
         </>
       )}
     </Stack>
+    </RecipeProvider>
+    </CartProvider>
   );
 }
