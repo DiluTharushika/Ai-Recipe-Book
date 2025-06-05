@@ -1,87 +1,91 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, Button, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
-import { db } from '../../config/firebaseConfig';
-import { addDoc, collection, query, where, orderBy, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  FlatList,
+  StyleSheet,
+  ActivityIndicator,
+} from 'react-native';
 import { useRoute } from '@react-navigation/native';
-import { getAuth } from 'firebase/auth';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { db } from '../../config/firebaseConfig';
 
-const Comment = () => {
+export default function Comment({ username }) {
   const route = useRoute();
   const { recipeId } = route.params || {};
-  const auth = getAuth();
 
   const [comment, setComment] = useState('');
-  const [comments, setComments] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleAddComment = async () => {
-    const user = auth.currentUser;
-    if (!comment.trim() || !user || !recipeId) return;
+  const handleSubmit = async () => {
+    const trimmed = comment.trim();
+
+    if (!trimmed) {
+      alert('Comment cannot be empty.');
+      return;
+    }
+
+    if (!recipeId) {
+      console.warn('❌ recipeId is missing!');
+      alert('Error: Cannot submit comment. Recipe ID is missing.');
+      return;
+    }
 
     try {
+      setSubmitting(true);
+
       await addDoc(collection(db, 'comments'), {
-        text: comment.trim(),
-        recipeId,
-        userId: user.uid,
-        userName: user.displayName || user.email || 'Anonymous',
-        createdAt: serverTimestamp(),
+        comment: trimmed,
+        username: username || 'Anonymous',
+        recipeId: recipeId,
+        timestamp: serverTimestamp(),
       });
+
       setComment('');
+      alert('✅ Comment added!');
     } catch (error) {
-      console.warn('❌ Failed to add comment:', error);
+      console.error('Failed to add comment:', error);
+      alert('❌ Failed to add comment.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  useEffect(() => {
-    if (!recipeId) return;
-
-    const q = query(
-      collection(db, 'comments'),
-      where('recipeId', '==', recipeId),
-      orderBy('createdAt', 'desc')
+  if (!recipeId) {
+    return (
+      <View style={styles.container}>
+        <Text style={{ color: 'red' }}>Error: Recipe ID is missing.</Text>
+      </View>
     );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedComments = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setComments(fetchedComments);
-    });
-
-    return () => unsubscribe();
-  }, [recipeId]);
+  }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Comments</Text>
-
-      <FlatList
-        data={comments}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingBottom: 20 }}
-        renderItem={({ item }) => (
-          <View style={styles.commentItem}>
-            <Text style={styles.commentUser}>{item.userName}</Text>
-            <Text style={styles.commentText}>{item.text}</Text>
-          </View>
-        )}
-      />
-
+      <Text style={styles.header}>Add a Comment</Text>
       <TextInput
-        placeholder="Add a comment..."
+        style={styles.input}
+        placeholder="Write your comment here..."
+        placeholderTextColor="#aaa"
         value={comment}
         onChangeText={setComment}
-        style={styles.input}
-        placeholderTextColor="#999"
+        multiline
       />
-      <TouchableOpacity style={styles.button} onPress={handleAddComment}>
-        <Text style={styles.buttonText}>Submit Comment</Text>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={handleSubmit}
+        disabled={submitting}
+      >
+        {submitting ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Submit</Text>
+        )}
       </TouchableOpacity>
     </View>
   );
-};
-
-export default Comment;
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -89,43 +93,31 @@ const styles = StyleSheet.create({
     backgroundColor: '#1e1e1e',
     padding: 20,
   },
-  title: {
+  header: {
     fontSize: 22,
     color: '#f4c38d',
     fontWeight: 'bold',
     marginBottom: 20,
   },
-  commentItem: {
-    marginBottom: 12,
-    backgroundColor: '#2a2a2a',
-    padding: 12,
-    borderRadius: 8,
-  },
-  commentUser: {
-    color: '#f4c38d',
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  commentText: {
-    color: '#fff',
-    fontSize: 16,
-  },
   input: {
-    backgroundColor: '#2a2a2a',
+    borderWidth: 1,
+    borderColor: '#555',
+    borderRadius: 10,
     padding: 12,
-    borderRadius: 8,
+    fontSize: 16,
     color: '#fff',
-    marginTop: 10,
+    backgroundColor: '#2a2a2a',
+    marginBottom: 20,
   },
   button: {
     backgroundColor: '#f4c38d',
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 10,
+    padding: 14,
+    borderRadius: 10,
     alignItems: 'center',
   },
   buttonText: {
     color: '#1e1e1e',
+    fontSize: 16,
     fontWeight: 'bold',
   },
 });

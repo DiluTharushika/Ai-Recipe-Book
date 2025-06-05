@@ -9,6 +9,9 @@ import {
   StyleSheet,
   Alert,
   Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
 } from "react-native";
 import React, { useState } from "react";
 import { useRouter } from "expo-router";
@@ -56,99 +59,108 @@ const Register = () => {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <SafeAreaView style={styles.container}>
-        <View style={styles.logoContainer}>
-          <Image source={require("../../assets/images/chef 2.png")} style={styles.logo} />
-          <Text style={styles.logoText}>My Recipes</Text>
-        </View>
-
-        <View style={styles.contentContainer}>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Sign up to get started</Text>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Username</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Enter Your Username"
-              placeholderTextColor="#9E9E9E"
-              value={username}
-              onChangeText={setUsername}
-              autoCapitalize="words"
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Enter Your Email"
-              placeholderTextColor="#9E9E9E"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          </View>
-
-          {/* Password Field */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Password</Text>
-            <View style={styles.passwordInputWrapper}>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Enter Your Password"
-                placeholderTextColor="#9E9E9E"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                autoCapitalize="none"
-              />
-              <TouchableOpacity
-                style={styles.eyeIcon}
-                onPress={() => setShowPassword(!showPassword)}
-              >
-                <Feather name={showPassword ? "eye-off" : "eye"} size={20} color="#555" />
-              </TouchableOpacity>
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: "#262626" }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+          style={{ backgroundColor: "#262626" }}
+        >
+          <SafeAreaView style={styles.container}>
+            <View style={styles.logoContainer}>
+              <Image source={require("../../assets/images/chef 2.png")} style={styles.logo} />
+              <Text style={styles.logoText}>My Recipes</Text>
             </View>
-          </View>
 
-          {/* Confirm Password Field */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Confirm Password</Text>
-            <View style={styles.passwordInputWrapper}>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Confirm Your Password"
-                placeholderTextColor="#9E9E9E"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry={!showConfirmPassword}
-                autoCapitalize="none"
-              />
-              <TouchableOpacity
-                style={styles.eyeIcon}
-                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-              >
-                <Feather name={showConfirmPassword ? "eye-off" : "eye"} size={20} color="#555" />
+            <View style={styles.contentContainer}>
+              <Text style={styles.title}>Create Account</Text>
+              <Text style={styles.subtitle}>Sign up to get started</Text>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Username</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Enter Your Username"
+                  placeholderTextColor="#9E9E9E"
+                  value={username}
+                  onChangeText={setUsername}
+                  autoCapitalize="words"
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Email</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Enter Your Email"
+                  placeholderTextColor="#9E9E9E"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Password</Text>
+                <View style={styles.passwordInputWrapper}>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="Enter Your Password"
+                    placeholderTextColor="#9E9E9E"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPassword}
+                    autoCapitalize="none"
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeIcon}
+                    onPress={() => setShowPassword(!showPassword)}
+                  >
+                    <Feather name={showPassword ? "eye-off" : "eye"} size={20} color="#555" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Confirm Password</Text>
+                <View style={styles.passwordInputWrapper}>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="Confirm Your Password"
+                    placeholderTextColor="#9E9E9E"
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    secureTextEntry={!showConfirmPassword}
+                    autoCapitalize="none"
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeIcon}
+                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    <Feather name={showConfirmPassword ? "eye-off" : "eye"} size={20} color="#555" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <TouchableOpacity style={styles.button} onPress={handleRegister}>
+                <Text style={styles.buttonText}>Register</Text>
               </TouchableOpacity>
+
+              <Text style={styles.registerText}>
+                Already have an account?{" "}
+                <Text style={styles.registerLink} onPress={() => router.push("/Login/login")}>
+                  Sign in
+                </Text>
+              </Text>
             </View>
-          </View>
-
-          <TouchableOpacity style={styles.button} onPress={handleRegister}>
-            <Text style={styles.buttonText}>Register</Text>
-          </TouchableOpacity>
-
-          <Text style={styles.registerText}>
-            Already have an account?{" "}
-            <Text style={styles.registerLink} onPress={() => router.push("/Login/login")}>
-              Sign in
-            </Text>
-          </Text>
-        </View>
-      </SafeAreaView>
-    </TouchableWithoutFeedback>
+          </SafeAreaView>
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 };
 

@@ -7,7 +7,7 @@ const meals = [
   "🍞 Breakfast only",
   "🍛 Lunch + Dinner",
   "🍽 All three",
-  "Other",
+  "🍰 All + Desserts",  // changed from "Other"
 ];
 
 export default function RecipeGenerator03() {

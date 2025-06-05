@@ -9,6 +9,9 @@ import {
   StyleSheet,
   Image,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
 } from "react-native";
 import React, { useState } from "react";
 import { useRouter } from "expo-router";
@@ -29,11 +32,8 @@ const Login = () => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-
       console.log("Logged in:", user.email);
-
-      // Navigate to Home (update route if different)
-      router.replace("/Screens/RecipeGenerator01"); // or your main screen
+      router.replace("/Screens/RecipeGenerator01");
     } catch (error) {
       console.error("Login error:", error);
       Alert.alert("Login Failed", error.message);
@@ -45,59 +45,70 @@ const Login = () => {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <SafeAreaView style={styles.container}>
-        <View style={styles.logoContainer}>
-          <Image
-            source={require("../../assets/images/chef 2.png")}
-            style={styles.logo}
-          />
-          <Text style={styles.logoText}>My Recipes</Text>
-        </View>
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: "#262626" }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1, backgroundColor: "#262626" }}
+          keyboardShouldPersistTaps="handled"
+          style={{ backgroundColor: "#262626" }}
+        >
+          <SafeAreaView style={styles.container}>
+            <View style={styles.logoContainer}>
+              <Image
+                source={require("../../assets/images/chef 2.png")}
+                style={styles.logo}
+              />
+              <Text style={styles.logoText}>My Recipes</Text>
+            </View>
 
-        <View style={styles.contentContainer}>
-          <Text style={styles.title}>Welcome!!</Text>
-          <Text style={styles.subtitle}>Sign in to continue</Text>
+            <View style={styles.contentContainer}>
+              <Text style={styles.title}>Welcome!!</Text>
+              <Text style={styles.subtitle}>Sign in to continue</Text>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Enter Your Email"
-              placeholderTextColor="#9E9E9E"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Email</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Enter Your Email"
+                  placeholderTextColor="#9E9E9E"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Enter Your Password"
-              placeholderTextColor="#9E9E9E"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-            />
-          </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Password</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Enter Your Password"
+                  placeholderTextColor="#9E9E9E"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  autoCapitalize="none"
+                />
+              </View>
 
-          <TouchableOpacity style={styles.button} onPress={handleLogin}>
-            <Text style={styles.buttonText}>Sign in</Text>
-          </TouchableOpacity>
+              <TouchableOpacity style={styles.button} onPress={handleLogin}>
+                <Text style={styles.buttonText}>Sign in</Text>
+              </TouchableOpacity>
 
-          <Text style={styles.registerText}>
-            Don't have an account?{" "}
-            <Text style={styles.registerLink} onPress={navigateToSignUp}>
-              Register
-            </Text>
-          </Text>
-        </View>
-      </SafeAreaView>
-    </TouchableWithoutFeedback>
+              <Text style={styles.registerText}>
+                Don't have an account?{" "}
+                <Text style={styles.registerLink} onPress={navigateToSignUp}>
+                  Register
+                </Text>
+              </Text>
+            </View>
+          </SafeAreaView>
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -107,7 +118,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#262626",
-    padding: 20,
+    padding: 10,
   },
   logoContainer: {
     alignItems: "center",
@@ -136,6 +147,7 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
     paddingTop: 70,
+    
   },
   title: {
     fontSize: 47,

@@ -1,18 +1,46 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ActivityIndicator, Alert } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
 import { router } from "expo-router";
 import { useRecipePreferences } from "../../context/RecipeContext";
 import Constants from "expo-constants";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "../../config/firebaseConfig";
+import { getAuth } from "firebase/auth";
 
 export default function GenerateScreen() {
   const { preferences, setGeneratedRecipes } = useRecipePreferences();
   const [loading, setLoading] = useState(true);
+
   const GROQ_API_KEY = Constants.expoConfig?.extra?.GROQ_API_KEY;
+  const PIXABAY_API_KEY = Constants.expoConfig?.extra?.PIXABAY_API_KEY;
+
+  const getRandomPixabayImage = async () => {
+    try {
+      const response = await fetch(
+        `https://pixabay.com/api/?key=${PIXABAY_API_KEY}&q=food&image_type=photo`
+      );
+      const data = await response.json();
+      if (data.hits?.length > 0) {
+        const randomIndex = Math.floor(Math.random() * data.hits.length);
+        return data.hits[randomIndex].webformatURL;
+      }
+    } catch (err) {
+      console.error("Pixabay fetch error:", err);
+    }
+    // Return a static fallback image if Pixabay fails
+    return "https://cdn.pixabay.com/photo/2017/05/07/08/56/breakfast-2299784_1280.jpg";
+  };
 
   useEffect(() => {
     const fetchRecipes = async () => {
-      if (!GROQ_API_KEY) {
-        Alert.alert("API key missing", "Add GROQ_API_KEY to app.json");
+      if (!GROQ_API_KEY || !PIXABAY_API_KEY) {
+        Alert.alert("Missing API Key", "Set GROQ_API_KEY and PIXABAY_API_KEY in app.json");
         setLoading(false);
         return;
       }
@@ -57,9 +85,6 @@ OUTPUT FORMAT (strict):
 
         const data = await res.json();
         const content = data.choices?.[0]?.message?.content ?? "";
-        console.log("Groq raw:", content);
-
-        // Clean the response
         let jsonText = content
           .trim()
           .replace(/^```json/i, "")
@@ -69,51 +94,62 @@ OUTPUT FORMAT (strict):
 
         const firstBracket = jsonText.indexOf("[");
         const lastBracket = jsonText.lastIndexOf("]");
-
         if (firstBracket !== -1 && lastBracket !== -1) {
           jsonText = jsonText.slice(firstBracket, lastBracket + 1);
         }
 
-        try {
-          const recipes = JSON.parse(jsonText);
-
-          // Normalize ingredients, clean cost to number
-          const validatedRecipes = recipes.map((recipe) => ({
-            ...recipe,
-            ingredients: recipe.ingredients?.map((ing) => {
-              if (typeof ing === "string") {
-                return {
-                  ingredientName: ing,
-                  ingredientMeasurement: "N/A",
-                  ingredientCost: 0,
-                };
-              } else {
-                // Remove any non-numeric characters from cost, convert to number
-                let costRaw = ing.ingredientCost;
-                if (typeof costRaw === "string") {
-                  costRaw = costRaw.replace(/[^0-9.]/g, "");
-                }
-                const costNum = parseFloat(costRaw);
-                return {
-                  ingredientName: ing.ingredientName || ing.name || "Unknown",
-                  ingredientMeasurement: ing.ingredientMeasurement || "N/A",
-                  ingredientCost: isNaN(costNum) ? 0 : costNum,
-                };
+        const recipes = JSON.parse(jsonText);
+        const validatedRecipes = recipes.map((recipe) => ({
+          ...recipe,
+          ingredients: recipe.ingredients?.map((ing) => {
+            if (typeof ing === "string") {
+              return {
+                ingredientName: ing,
+                ingredientMeasurement: "N/A",
+                ingredientCost: 0,
+              };
+            } else {
+              let costRaw = ing.ingredientCost;
+              if (typeof costRaw === "string") {
+                costRaw = costRaw.replace(/[^0-9.]/g, "");
               }
-            }) || [],
-          }));
+              const costNum = parseFloat(costRaw);
+              return {
+                ingredientName: ing.ingredientName || ing.name || "Unknown",
+                ingredientMeasurement: ing.ingredientMeasurement || "N/A",
+                ingredientCost: isNaN(costNum) ? 0 : costNum,
+              };
+            }
+          }) || [],
+        }));
 
-          setGeneratedRecipes(validatedRecipes);
-          router.replace("/(tabs)/home");
-        } catch (parseError) {
-          console.error("JSON parse error:", parseError);
-          console.warn("Raw response looked like:", jsonText);
-          Alert.alert("Oops", "Recipe format was broken. Try again.");
+        const auth = getAuth();
+        const user = auth.currentUser;
+        if (!user) {
+          Alert.alert("Error", "User not authenticated.");
           setLoading(false);
+          return;
         }
+
+        await Promise.all(
+          validatedRecipes.map(async (recipe) => {
+            const fallbackImage = await getRandomPixabayImage();
+            await addDoc(collection(db, "recipes"), {
+              ...recipe,
+              image: fallbackImage,
+              createdAt: serverTimestamp(),
+              createdBy: user.uid,
+              category: "AI Generated",
+              _isAI: true,
+            });
+          })
+        );
+
+        setGeneratedRecipes(validatedRecipes);
+        router.replace("/(tabs)/home");
       } catch (err) {
-        console.error("Generation error:", err);
-        Alert.alert("Generation failed", err.message || "Try again.");
+        console.error("Error during generation:", err);
+        Alert.alert("Failed to generate recipes", err.message || "Try again.");
         setLoading(false);
       }
     };

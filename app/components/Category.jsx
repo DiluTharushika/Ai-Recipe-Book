@@ -11,9 +11,9 @@ import { useRecipePreferences } from '../../context/RecipeContext';
 import Constants from 'expo-constants';
 
 const AI_PLACEHOLDER_IMAGE = 'https://via.placeholder.com/400x220.png?text=AI+Recipe+Image';
-const UNSPLASH_ACCESS_KEY = Constants.expoConfig.extra.UNSPLASH_ACCESS_KEY;
+const PIXABAY_API_KEY = Constants.expoConfig.extra?.PIXABAY_API_KEY;
 
-export default function Category() {
+export default function Category({ recipes = [], searchQuery = '' }) {
   const router = useRouter();
   const allPossibleCategories = ['All', 'AI Generated', 'BreakFast', 'Lunch', 'FastFood', 'Dinner', 'Dessert'];
 
@@ -41,43 +41,59 @@ export default function Category() {
     fetchRecipes();
   }, []);
 
-  useEffect(() => {
-    const fetchUnsplashImage = async (query) => {
-      try {
-        const response = await fetch(
-          `https://api.unsplash.com/search/photos?page=1&query=${encodeURIComponent(query)}&client_id=${UNSPLASH_ACCESS_KEY}`
-        );
-        const data = await response.json();
-        if (data.results && data.results.length > 0) {
-          return data.results[0].urls.regular;
-        }
-      } catch (error) {
-        console.warn('Unsplash fetch failed:', error);
-      }
+  const fetchPixabayImage = async (query) => {
+    if (!PIXABAY_API_KEY) {
+      console.warn('Missing Pixabay API Key in Constants.expoConfig.extra');
       return null;
-    };
+    }
 
+    try {
+      const response = await fetch(
+        `https://pixabay.com/api/?key=${PIXABAY_API_KEY}&q=${encodeURIComponent(query)}&image_type=photo&per_page=3`
+      );
+      const data = await response.json();
+      if (data.hits && data.hits.length > 0) {
+        return data.hits[0].webformatURL;
+      }
+    } catch (error) {
+      console.warn('Pixabay fetch failed:', error);
+    }
+    return null;
+  };
+
+  useEffect(() => {
     const prepareAIRecipes = async () => {
-      if (!generatedRecipes) return;
+      if (!generatedRecipes || generatedRecipes.length === 0 || aiRecipesWithImages.length > 0) return;
+
+      const firestoreIds = new Set(allRecipes.map(r => r.id));
+      const firestoreTitles = new Set(allRecipes.map(r => r.title || r.name || ''));
+
+      const filteredGenerated = generatedRecipes.filter(r => {
+        const title = r.title || r.name || '';
+        return !firestoreIds.has(r.id) && !firestoreTitles.has(title);
+      });
+
       const updated = await Promise.all(
-        generatedRecipes.map(async (r, idx) => {
+        filteredGenerated.map(async (r, idx) => {
           const fallbackImage = r.image
             ? r.image
-            : await fetchUnsplashImage(r.title || r.name || 'recipe') || AI_PLACEHOLDER_IMAGE;
+            : await fetchPixabayImage(r.title || r.name || 'recipe') || AI_PLACEHOLDER_IMAGE;
 
           return {
             ...r,
             image: fallbackImage,
             id: r.id || `ai-${idx}`,
             _isAI: true,
+            category: 'AI Generated'
           };
         })
       );
+
       setAiRecipesWithImages(updated);
     };
 
     prepareAIRecipes();
-  }, [generatedRecipes]);
+  }, [generatedRecipes, allRecipes]);
 
   const toggleLike = (recipe) => {
     setLikedRecipes((prev) => {
@@ -88,9 +104,8 @@ export default function Category() {
           ? [...prevFavorites, recipe]
           : prevFavorites.filter((fav) => fav.id !== recipe.id);
 
-        // Navigate to favorites screen with updated favorites
         router.push({
-          pathname: '/favourite', // <- adjust if your path differs
+          pathname: '/favourite',
           params: { favorites: JSON.stringify(updatedFavorites) },
         });
 
@@ -101,12 +116,23 @@ export default function Category() {
   };
 
   const filteredRecipes = (() => {
-    if (selectedCategory === 'All') return allRecipes;
-    if (selectedCategory === 'AI Generated') return aiRecipesWithImages;
-    return allRecipes.filter(
-      (recipe) =>
-        recipe.category?.toLowerCase() === selectedCategory.toLowerCase()
-    );
+    let baseRecipes = selectedCategory === 'All'
+      ? [...aiRecipesWithImages, ...allRecipes]
+      : selectedCategory === 'AI Generated'
+        ? aiRecipesWithImages
+        : allRecipes.filter(
+            (recipe) => recipe.category?.toLowerCase() === selectedCategory.toLowerCase()
+          );
+
+    // Filter by search query
+    if (searchQuery.trim() !== '') {
+      const q = searchQuery.toLowerCase();
+      baseRecipes = baseRecipes.filter(
+        (r) => (r.title || r.name || '').toLowerCase().includes(q)
+      );
+    }
+
+    return Array.from(new Map(baseRecipes.map(r => [(r.title || r.name || '').toLowerCase(), r])).values());
   })();
 
   return (
@@ -160,11 +186,20 @@ export default function Category() {
               }
             >
               <Image
-                source={{ uri: item.image || AI_PLACEHOLDER_IMAGE }}
+                source={{
+                  uri:
+                    typeof item.image === 'string' && item.image.startsWith('http')
+                      ? item.image
+                      : AI_PLACEHOLDER_IMAGE,
+                }}
                 style={styles.recipeImage}
               />
-              <Text style={styles.recipeName}>{item.name || item.title}</Text>
-              <Text style={styles.recipeDetails}>{item.details || ''}</Text>
+              <Text style={styles.recipeName}>
+                {item.name || item.title || 'Untitled Recipe'}
+              </Text>
+              <Text style={styles.recipeDetails}>
+                {item.details || 'No description available.'}
+              </Text>
             </TouchableOpacity>
           </View>
         )}

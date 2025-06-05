@@ -10,13 +10,13 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import { db } from '../../config/firebaseConfig';
 import Constants from 'expo-constants';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const AI_PLACEHOLDER_IMAGE = 'https://via.placeholder.com/400x220.png?text=AI+Recipe+Image';
-const UNSPLASH_ACCESS_KEY = Constants.expoConfig.extra.UNSPLASH_ACCESS_KEY;
+const PIXABAY_API_KEY = Constants.expoConfig.extra.PIXABAY_API_KEY;
 
 export default function RecipeDetail() {
   const route = useRoute();
@@ -27,17 +27,21 @@ export default function RecipeDetail() {
   const [creatorNames, setCreatorNames] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchUnsplashImage = async (query) => {
+  // New state for comments (per recipe)
+  const [comments, setComments] = useState([]);
+  const [loadingComments, setLoadingComments] = useState(false);
+
+  const fetchPixabayImage = async (query) => {
     try {
       const response = await fetch(
-        `https://api.unsplash.com/search/photos?page=1&query=${encodeURIComponent(query)}&client_id=${UNSPLASH_ACCESS_KEY}`
+        `https://pixabay.com/api/?key=${PIXABAY_API_KEY}&q=${encodeURIComponent(query)}&image_type=photo&per_page=3`
       );
       const data = await response.json();
-      if (data.results && data.results.length > 0) {
-        return data.results[0].urls.regular;
+      if (data.hits && data.hits.length > 0) {
+        return data.hits[0].webformatURL;
       }
     } catch (error) {
-      console.warn('❌ Unsplash image fetch failed:', error);
+      console.warn('❌ Pixabay image fetch failed:', error);
     }
     return null;
   };
@@ -59,31 +63,44 @@ export default function RecipeDetail() {
     }
 
     const parseAndSetRecipes = async () => {
+      let parsed;
+
       if (recipeParam) {
-        try {
-          const parsed = JSON.parse(recipeParam);
-          let arr = Array.isArray(parsed) ? parsed : [parsed];
-
-          const updatedRecipes = await Promise.all(
-            arr.map(async (recipe) => {
-              if (!recipe.image || recipe.image.trim() === '') {
-                const fallbackImage = await fetchUnsplashImage(recipe.title || recipe.name || 'recipe');
-                return { ...recipe, image: fallbackImage || AI_PLACEHOLDER_IMAGE };
-              }
-              return recipe;
-            })
-          );
-
-          const creators = updatedRecipes.map((r) => r.createdBy || 'AI Generated');
-          setRecipes(updatedRecipes);
-          setCreatorNames(creators);
-          setLoading(false);
-          return;
-        } catch (e) {
-          console.warn('❌ Failed to parse recipe param:', e);
-          setLoading(false);
-          return;
+        if (typeof recipeParam === 'string') {
+          try {
+            parsed = JSON.parse(recipeParam);
+          } catch (e) {
+            console.warn('❌ Failed to parse recipe param:', e);
+            setLoading(false);
+            return;
+          }
+        } else {
+          parsed = recipeParam;
         }
+
+        let arr = Array.isArray(parsed) ? parsed : [parsed];
+
+        const updatedRecipes = await Promise.all(
+          arr.map(async (recipe) => {
+            if (!recipe.image || recipe.image.trim() === '') {
+              const fallbackImage = await fetchPixabayImage(recipe.title || recipe.name || 'recipe');
+              return { ...recipe, image: fallbackImage || AI_PLACEHOLDER_IMAGE };
+            }
+            return recipe;
+          })
+        );
+
+        const creators = await Promise.all(updatedRecipes.map(r => fetchCreatorName(r.createdByUid || r.createdBy)));
+        setRecipes(updatedRecipes);
+        setCreatorNames(creators);
+        setLoading(false);
+
+        // Load comments for first recipe if exists
+        if (updatedRecipes.length > 0 && updatedRecipes[0].id) {
+          fetchComments(updatedRecipes[0].id);
+        }
+
+        return;
       }
 
       if (!id) {
@@ -102,7 +119,7 @@ export default function RecipeDetail() {
 
           if (!fetchedRecipe.image || fetchedRecipe.image.trim() === '') {
             fetchedRecipe.image =
-              (await fetchUnsplashImage(fetchedRecipe.title || fetchedRecipe.name || 'recipe')) ||
+              (await fetchPixabayImage(fetchedRecipe.title || fetchedRecipe.name || 'recipe')) ||
               AI_PLACEHOLDER_IMAGE;
           }
 
@@ -110,10 +127,14 @@ export default function RecipeDetail() {
 
           setRecipes([fetchedRecipe]);
           setCreatorNames([creatorName]);
+
+          // Load comments for this recipe
+          fetchComments(fetchedRecipe.id);
         } else {
           setRecipes(null);
         }
       } catch (error) {
+        console.warn('Error fetching recipe:', error);
         setRecipes(null);
       } finally {
         setLoading(false);
@@ -123,8 +144,36 @@ export default function RecipeDetail() {
     parseAndSetRecipes();
   }, [id, recipeParam]);
 
+  // Fetch comments from Firestore for a recipe
+  const fetchComments = async (recipeId) => {
+    setLoadingComments(true);
+    try {
+      const commentsRef = collection(db, 'comments');
+      const q = query(
+        commentsRef,
+        where('recipeId', '==', recipeId),
+        orderBy('timestamp', 'desc')
+      );
+      const querySnapshot = await getDocs(q);
+      const commentsData = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        timestamp: doc.data().timestamp ? doc.data().timestamp.toDate() : null,
+      }));
+      setComments(commentsData);
+    } catch (error) {
+      console.warn('Error fetching comments:', error);
+    } finally {
+      setLoadingComments(false);
+    }
+  };
+
   const handleAddToCart = (recipe) => {
     navigation.navigate('Screens/Cart', { recipe });
+  };
+
+  const handleGoToComments = (recipeId) => {
+    navigation.navigate('Screens/Comment', { recipeId });
   };
 
   const renderStars = (rating) => {
@@ -163,21 +212,21 @@ export default function RecipeDetail() {
     );
   }
 
-  const renderRecipe = ({ item, index }) => {
-    return (
-      <View key={item.id || index} style={styles.recipeCard}>
+  // Render one recipe at a time (assuming usually only 1)
+  const item = recipes[0];
+  const creatorName = creatorNames[0] || 'Unknown';
+
+  return (
+    <ScrollView style={styles.container}>
+      <View style={styles.recipeCard}>
         <Image source={{ uri: item.image || AI_PLACEHOLDER_IMAGE }} style={styles.image} />
 
-        {/* Row with cart, comment, star */}
         <View style={styles.iconRow}>
           <TouchableOpacity style={styles.iconWrapper} onPress={() => handleAddToCart(item)}>
             <Ionicons name="cart-outline" size={24} color="#f4c38d" />
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.iconWrapper}
-            onPress={() => navigation.navigate('Screens/Comment', { recipeId: item.id })}
-          >
+          <TouchableOpacity style={styles.iconWrapper} onPress={() => handleGoToComments(item.id)}>
             <Ionicons name="chatbubble-outline" size={24} color="#f4c38d" />
           </TouchableOpacity>
 
@@ -188,7 +237,7 @@ export default function RecipeDetail() {
 
         <Text style={styles.title}>{item.name || item.title || 'Unnamed Recipe'}</Text>
         <Text style={styles.category}>Category: {item.category || 'Unknown'}</Text>
-        <Text style={styles.createdBy}>Created by: {creatorNames[index] || 'Unknown'}</Text>
+        <Text style={styles.createdBy}>Created by: {creatorName}</Text>
 
         <Text style={styles.sectionTitle}>Rating:</Text>
         <View style={styles.inlineRating}>
@@ -211,18 +260,25 @@ export default function RecipeDetail() {
 
         <Text style={styles.sectionTitle}>Instructions:</Text>
         <Text style={styles.instructionText}>{item.instructions || 'No instructions provided.'}</Text>
-      </View>
-    );
-  };
 
-  return (
-    <ScrollView style={styles.container}>
-      <FlatList
-        data={recipes}
-        renderItem={renderRecipe}
-        keyExtractor={(item, index) => item.id || index.toString()}
-        scrollEnabled={false}
-      />
+        {/* Comments Section */}
+        <Text style={styles.sectionTitle}>Comments:</Text>
+        {loadingComments ? (
+          <ActivityIndicator color="#f4c38d" />
+        ) : comments.length === 0 ? (
+          <Text style={{ color: '#aaa', fontStyle: 'italic' }}>No comments yet. Be the first!</Text>
+        ) : (
+          comments.map((comment) => (
+            <View key={comment.id} style={styles.commentItem}>
+              <Text style={styles.commentUser}>{comment.username || 'Anonymous'}</Text>
+              <Text style={styles.commentText}>{comment.comment}</Text>
+              <Text style={styles.commentTime}>
+                {comment.timestamp ? comment.timestamp.toLocaleString() : ''}
+              </Text>
+            </View>
+          ))
+        )}
+      </View>
     </ScrollView>
   );
 }
@@ -241,7 +297,6 @@ const styles = StyleSheet.create({
   },
   recipeCard: {
     marginBottom: 30,
-    position: 'relative',
   },
   image: {
     width: '100%',
@@ -283,20 +338,6 @@ const styles = StyleSheet.create({
     color: '#f4c38d',
     marginBottom: 8,
   },
-  ratingContainer: {
-    marginBottom: 10,
-  },
-  inlineRating: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  ratingText: {
-    color: '#f4c38d',
-    marginLeft: 6,
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
   category: {
     color: '#d2b48c',
     fontSize: 16,
@@ -326,5 +367,37 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     lineHeight: 22,
+  },
+  inlineRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  ratingText: {
+    color: '#f4c38d',
+    marginLeft: 6,
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  commentItem: {
+    backgroundColor: '#2b2a29',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  commentUser: {
+    fontWeight: 'bold',
+    color: '#f4c38d',
+    marginBottom: 4,
+  },
+  commentText: {
+    color: '#ddd',
+    fontSize: 14,
+  },
+  commentTime: {
+    color: '#aaa',
+    fontSize: 12,
+    marginTop: 6,
+    fontStyle: 'italic',
   },
 });

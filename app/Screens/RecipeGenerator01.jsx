@@ -4,8 +4,8 @@ import { useRouter } from "expo-router";
 import { useRecipePreferences } from "../../context/RecipeContext"; // adjust the path if needed
 
 const cuisines = [
-  "Italian 🍕", "Sri Lankan 🍛", "Chinese 🍜", "Indian 🍲",
-  "Mexican 🌮", "Japanese 🍣", "French 🥖", "Others"
+  "Italian 🍕", "Chinese 🍜", "Indian 🍲",
+  "Mexican 🌮", "Japanese 🍣", "French 🥖", "Thai 🍲", "Others"
 ];
 
 export default function RecipeGenerator01() {

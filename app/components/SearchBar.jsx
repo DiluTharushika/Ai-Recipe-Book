@@ -7,7 +7,7 @@ const SearchBar = ({ onSearch }) => {
 
   const handleSearch = (text) => {
     setQuery(text);
-    onSearch(text); // Pass search query to parent component
+    onSearch(text); // Pass to parent
   };
 
   return (
@@ -15,7 +15,7 @@ const SearchBar = ({ onSearch }) => {
       <FontAwesome name="search" size={20} color="#999" style={styles.icon} />
       <TextInput
         style={styles.searchInput}
-        placeholder="Searching..."
+        placeholder="Search recipes..."
         placeholderTextColor="#999"
         value={query}
         onChangeText={handleSearch}
@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     alignItems: 'center',
     height: 40,
-    marginTop:140,
+    marginTop: 140,
   },
   icon: {
     marginRight: 10,
@@ -41,8 +41,8 @@ const styles = StyleSheet.create({
     flex: 1,
     color: '#FFF',
     fontSize: 16,
-    height: '100%', // Ensures the TextInput takes the full height of the container
-    paddingVertical: 0, // Prevents extra padding affecting placeholder visibility
+    height: '100%',
+    paddingVertical: 0,
   },
 });
 

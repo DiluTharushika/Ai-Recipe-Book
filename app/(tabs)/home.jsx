@@ -7,7 +7,6 @@ import {
   RefreshControl,
 } from "react-native";
 import React, { useEffect, useState, useCallback } from "react";
-//import RecipeListByCategory from "../components/RecipeListByCategory";
 import AutoImageSlider from "../components/AutoImageSlider";
 import SearchBar from "../components/SearchBar";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,11 +14,13 @@ import { useRouter } from "expo-router";
 import { auth, db } from "../../config/firebaseConfig";
 import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import Category from "../components/Category";
+
 export default function Home() {
   const router = useRouter();
   const [username, setUsername] = useState("Guest");
   const [refreshing, setRefreshing] = useState(false);
   const [allRecipes, setAllRecipes] = useState([]);
+  const [searchQuery, setSearchQuery] = useState(""); // ✅ Added
 
   const fetchUsername = async () => {
     try {
@@ -94,8 +95,8 @@ export default function Home() {
         }
       >
         <AutoImageSlider />
-        <SearchBar />
-        <Category recipes={allRecipes} />
+        <SearchBar onSearch={setSearchQuery} /> {/* ✅ Pass onSearch properly */}
+        <Category recipes={allRecipes} searchQuery={searchQuery} /> {/* ✅ Pass searchQuery */}
       </ScrollView>
     </View>
   );
