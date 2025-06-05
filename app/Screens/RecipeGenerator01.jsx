@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { useRecipePreferences } from "../../context/RecipeContext"; // adjust the path if needed
+import * as Animatable from "react-native-animatable";
 
 const cuisines = [
   "Italian 🍕", "Chinese 🍜", "Indian 🍲",
@@ -30,30 +31,42 @@ export default function RecipeGenerator01() {
   };
 
   return (
-    <View style={styles.container}>
+    <Animatable.View animation="fadeIn" duration={800} style={styles.container}>
       <Text style={styles.question}>Which cuisines make you hungry?</Text>
+
       {cuisines.map((item, index) => {
         const isSelected = selectedCuisines.includes(item);
         return (
-          <TouchableOpacity
+          <Animatable.View
             key={index}
-            style={[styles.option, isSelected && styles.selectedOption]}
-            onPress={() => toggleCuisine(item)}
+            animation="fadeInUp"
+            delay={100 * index}
+            useNativeDriver
           >
-            <Text style={[styles.optionText, isSelected && styles.selectedText]}>
-              {isSelected ? "🔘" : "⚪"} {item}
-            </Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.option, isSelected && styles.selectedOption]}
+              onPress={() => toggleCuisine(item)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.optionText, isSelected && styles.selectedText]}>
+                {isSelected ? "🔘" : "⚪"} {item}
+              </Text>
+            </TouchableOpacity>
+          </Animatable.View>
         );
       })}
-      <TouchableOpacity
-        style={styles.nextBtn}
-        onPress={handleNext}
-        disabled={selectedCuisines.length === 0}
-      >
-        <Text style={styles.nextText}>Next</Text>
-      </TouchableOpacity>
-    </View>
+
+      <Animatable.View animation="zoomIn" delay={100 * cuisines.length} useNativeDriver>
+        <TouchableOpacity
+          style={[styles.nextBtn, selectedCuisines.length === 0 && { opacity: 0.5 }]}
+          onPress={handleNext}
+          disabled={selectedCuisines.length === 0}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.nextText}>Next</Text>
+        </TouchableOpacity>
+      </Animatable.View>
+    </Animatable.View>
   );
 }
 
@@ -77,7 +90,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   selectedOption: {
-    borderColor: "#a97454",
+    borderColor: "#FFA500",
     backgroundColor: "#2e2e2e",
   },
   optionText: {
@@ -90,7 +103,7 @@ const styles = StyleSheet.create({
   },
   nextBtn: {
     marginTop: 30,
-    backgroundColor: "#8b5e3c",
+    backgroundColor: "#8B4513",
     padding: 12,
     borderRadius: 10,
     alignItems: "center",

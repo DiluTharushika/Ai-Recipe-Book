@@ -19,6 +19,7 @@ import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../../config/firebaseConfig";
 import { Feather } from "@expo/vector-icons";
+import * as Animatable from "react-native-animatable";
 
 const Register = () => {
   const router = useRouter();
@@ -70,16 +71,31 @@ const Register = () => {
           style={{ backgroundColor: "#262626" }}
         >
           <SafeAreaView style={styles.container}>
-            <View style={styles.logoContainer}>
-              <Image source={require("../../assets/images/chef 2.png")} style={styles.logo} />
-              <Text style={styles.logoText}>My Recipes</Text>
-            </View>
+            <Animatable.View animation="fadeInDown" duration={1200} style={styles.logoContainer}>
+              <Animatable.Image
+                animation="bounceIn"
+                delay={500}
+                source={require("../../assets/images/chef 2.png")}
+                style={styles.logo}
+              />
+              <Animatable.Text
+                animation="slideInUp"
+                delay={800}
+                style={styles.logoText}
+              >
+                My Recipes
+              </Animatable.Text>
+            </Animatable.View>
 
             <View style={styles.contentContainer}>
-              <Text style={styles.title}>Create Account</Text>
-              <Text style={styles.subtitle}>Sign up to get started</Text>
+              <Animatable.Text animation="fadeInLeft" delay={1000} style={styles.title}>
+                Create Account
+              </Animatable.Text>
+              <Animatable.Text animation="fadeInRight" delay={1200} style={styles.subtitle}>
+                Sign up to get started
+              </Animatable.Text>
 
-              <View style={styles.inputContainer}>
+              <Animatable.View animation="fadeInUp" delay={1400} style={styles.inputContainer}>
                 <Text style={styles.label}>Username</Text>
                 <TextInput
                   style={styles.textInput}
@@ -89,9 +105,9 @@ const Register = () => {
                   onChangeText={setUsername}
                   autoCapitalize="words"
                 />
-              </View>
+              </Animatable.View>
 
-              <View style={styles.inputContainer}>
+              <Animatable.View animation="fadeInUp" delay={1600} style={styles.inputContainer}>
                 <Text style={styles.label}>Email</Text>
                 <TextInput
                   style={styles.textInput}
@@ -102,9 +118,9 @@ const Register = () => {
                   keyboardType="email-address"
                   autoCapitalize="none"
                 />
-              </View>
+              </Animatable.View>
 
-              <View style={styles.inputContainer}>
+              <Animatable.View animation="fadeInUp" delay={1800} style={styles.inputContainer}>
                 <Text style={styles.label}>Password</Text>
                 <View style={styles.passwordInputWrapper}>
                   <TextInput
@@ -120,12 +136,12 @@ const Register = () => {
                     style={styles.eyeIcon}
                     onPress={() => setShowPassword(!showPassword)}
                   >
-                    <Feather name={showPassword ? "eye-off" : "eye"} size={20} color="#555" />
+                    <Feather name={showPassword ? "eye" : "eye-off"} size={20} color="#555" />
                   </TouchableOpacity>
                 </View>
-              </View>
+              </Animatable.View>
 
-              <View style={styles.inputContainer}>
+              <Animatable.View animation="fadeInUp" delay={2000} style={styles.inputContainer}>
                 <Text style={styles.label}>Confirm Password</Text>
                 <View style={styles.passwordInputWrapper}>
                   <TextInput
@@ -141,21 +157,23 @@ const Register = () => {
                     style={styles.eyeIcon}
                     onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
-                    <Feather name={showConfirmPassword ? "eye-off" : "eye"} size={20} color="#555" />
+                    <Feather name={showConfirmPassword ? "eye" : "eye-off"} size={20} color="#555" />
                   </TouchableOpacity>
                 </View>
-              </View>
+              </Animatable.View>
 
-              <TouchableOpacity style={styles.button} onPress={handleRegister}>
-                <Text style={styles.buttonText}>Register</Text>
-              </TouchableOpacity>
+              <Animatable.View animation="fadeInUp" delay={2200} style={{ width: "90%" }}>
+                <TouchableOpacity style={styles.button} onPress={handleRegister}>
+                  <Text style={styles.buttonText}>Register</Text>
+                </TouchableOpacity>
+              </Animatable.View>
 
-              <Text style={styles.registerText}>
+              <Animatable.Text animation="fadeIn" delay={2400} style={styles.registerText}>
                 Already have an account?{" "}
                 <Text style={styles.registerLink} onPress={() => router.push("/Login/login")}>
                   Sign in
                 </Text>
-              </Text>
+              </Animatable.Text>
             </View>
           </SafeAreaView>
         </ScrollView>
@@ -198,7 +216,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 38,
     fontWeight: "bold",
-    color: "#ffb84d",
+    color: "#FFA500",
     marginBottom: 5,
     fontFamily: "outfit-bold",
   },
@@ -221,7 +239,7 @@ const styles = StyleSheet.create({
   textInput: {
     height: 44,
     borderWidth: 2,
-    borderColor: "#FF9900",
+    borderColor: "#8B4513",
     borderRadius: 10,
     paddingHorizontal: 10,
     backgroundColor: "#ffebcc",
@@ -243,7 +261,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginVertical: 10,
     height: 44,
-    width: "90%",
+    width: "100%",
   },
   buttonText: {
     color: "#FFFFFF",

@@ -2,12 +2,13 @@ import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { useRecipePreferences } from "../../context/RecipeContext"; // adjust path if needed
+import * as Animatable from "react-native-animatable";
 
 const meals = [
   "🍞 Breakfast only",
   "🍛 Lunch + Dinner",
   "🍽 All three",
-  "🍰 All + Desserts",  // changed from "Other"
+  "🍰 All + Desserts",
 ];
 
 export default function RecipeGenerator03() {
@@ -26,30 +27,42 @@ export default function RecipeGenerator03() {
   };
 
   return (
-    <View style={styles.container}>
+    <Animatable.View animation="fadeIn" duration={800} style={styles.container}>
       <Text style={styles.question}>Meals to plan per day</Text>
+
       {meals.map((item, index) => {
         const isSelected = selectedMeal === item;
         return (
-          <TouchableOpacity
+          <Animatable.View
             key={index}
-            style={[styles.option, isSelected && styles.selectedOption]}
-            onPress={() => setSelectedMeal(item)}
+            animation="fadeInUp"
+            delay={100 * index}
+            useNativeDriver
           >
-            <Text style={[styles.optionText, isSelected && styles.selectedText]}>
-              {isSelected ? "🔘" : "⚪"} {item}
-            </Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.option, isSelected && styles.selectedOption]}
+              onPress={() => setSelectedMeal(item)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.optionText, isSelected && styles.selectedText]}>
+                {isSelected ? "🔘" : "⚪"} {item}
+              </Text>
+            </TouchableOpacity>
+          </Animatable.View>
         );
       })}
-      <TouchableOpacity
-        style={[styles.generateBtn, !selectedMeal && { backgroundColor: "#555" }]}
-        onPress={handleGenerate}
-        disabled={!selectedMeal}
-      >
-        <Text style={styles.generateText}>Generate</Text>
-      </TouchableOpacity>
-    </View>
+
+      <Animatable.View animation="zoomIn" delay={100 * meals.length} useNativeDriver>
+        <TouchableOpacity
+          style={[styles.generateBtn, !selectedMeal && { backgroundColor: "#555" }]}
+          onPress={handleGenerate}
+          disabled={!selectedMeal}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.generateText}>Generate</Text>
+        </TouchableOpacity>
+      </Animatable.View>
+    </Animatable.View>
   );
 }
 
@@ -82,7 +95,7 @@ const styles = StyleSheet.create({
   },
   generateBtn: {
     marginTop: 30,
-    backgroundColor: "#8b5e3c",
+    backgroundColor: "#8B4513",
     padding: 12,
     borderRadius: 10,
     alignItems: "center",

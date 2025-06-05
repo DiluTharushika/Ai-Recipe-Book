@@ -7,7 +7,6 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Image,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -16,12 +15,15 @@ import {
 import React, { useState } from "react";
 import { useRouter } from "expo-router";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../../config/firebaseConfig"; // make sure this path is correct
+import { auth } from "../../config/firebaseConfig";
+import * as Animatable from "react-native-animatable";
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const Login = () => {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordVisible, setPasswordVisible] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -51,59 +53,101 @@ const Login = () => {
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1, backgroundColor: "#262626" }}
+          contentContainerStyle={{ flexGrow: 1 }}
           keyboardShouldPersistTaps="handled"
-          style={{ backgroundColor: "#262626" }}
         >
           <SafeAreaView style={styles.container}>
-            <View style={styles.logoContainer}>
-              <Image
+            <Animatable.View animation="fadeInDown" duration={1200} style={styles.logoContainer}>
+              <Animatable.Image
+                animation="bounceIn"
+                delay={500}
                 source={require("../../assets/images/chef 2.png")}
                 style={styles.logo}
               />
-              <Text style={styles.logoText}>My Recipes</Text>
-            </View>
+              <Animatable.Text
+                animation="slideInUp"
+                delay={800}
+                style={styles.logoText}
+              >
+                My Recipes
+              </Animatable.Text>
+            </Animatable.View>
 
             <View style={styles.contentContainer}>
-              <Text style={styles.title}>Welcome!!</Text>
-              <Text style={styles.subtitle}>Sign in to continue</Text>
+              <Animatable.Text
+                animation="fadeInLeft"
+                delay={1000}
+                style={styles.title}
+              >
+                Welcome!!
+              </Animatable.Text>
+              <Animatable.Text
+                animation="fadeInRight"
+                delay={1200}
+                style={styles.subtitle}
+              >
+                Sign in to continue
+              </Animatable.Text>
 
-              <View style={styles.inputContainer}>
+              {/* Email Input */}
+              <Animatable.View animation="fadeInUp" delay={1400} style={styles.inputContainer}>
                 <Text style={styles.label}>Email</Text>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="Enter Your Email"
-                  placeholderTextColor="#9E9E9E"
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
-              </View>
+                <View style={styles.inputWrapper}>
+                  <TextInput
+                    style={[styles.textInput, { flex: 1 }]}
+                    placeholder="Enter Your Email"
+                    placeholderTextColor="#9E9E9E"
+                    value={email}
+                    onChangeText={setEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                </View>
+              </Animatable.View>
 
-              <View style={styles.inputContainer}>
+              {/* Password Input with Eye Icon */}
+              <Animatable.View animation="fadeInUp" delay={1600} style={styles.inputContainer}>
                 <Text style={styles.label}>Password</Text>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="Enter Your Password"
-                  placeholderTextColor="#9E9E9E"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
-                  autoCapitalize="none"
-                />
-              </View>
+                <View style={styles.inputWrapper}>
+                  <TextInput
+                    style={[styles.textInput, { flex: 1 }]}
+                    placeholder="Enter Your Password"
+                    placeholderTextColor="#9E9E9E"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!passwordVisible}
+                    autoCapitalize="none"
+                  />
+                  <TouchableOpacity
+                    onPress={() => setPasswordVisible(!passwordVisible)}
+                    style={{ paddingHorizontal: 8 }}
+                    activeOpacity={0.7}
+                  >
+                    <MaterialCommunityIcons
+                      name={passwordVisible ? "eye-outline" : "eye-off-outline"}
+                      size={24}
+                      color="#8B4513"
+                    />
+                  </TouchableOpacity>
+                </View>
+              </Animatable.View>
 
-              <TouchableOpacity style={styles.button} onPress={handleLogin}>
-                <Text style={styles.buttonText}>Sign in</Text>
-              </TouchableOpacity>
+              <Animatable.View animation="zoomIn" delay={1800} style={{ width: "90%" }}>
+                <TouchableOpacity style={styles.button} onPress={handleLogin}>
+                  <Text style={styles.buttonText}>Sign in</Text>
+                </TouchableOpacity>
+              </Animatable.View>
 
-              <Text style={styles.registerText}>
+              <Animatable.Text
+                animation="fadeIn"
+                delay={2000}
+                style={styles.registerText}
+              >
                 Don't have an account?{" "}
                 <Text style={styles.registerLink} onPress={navigateToSignUp}>
                   Register
                 </Text>
-              </Text>
+              </Animatable.Text>
             </View>
           </SafeAreaView>
         </ScrollView>
@@ -123,8 +167,7 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: "center",
     marginBottom: 30,
-    position: "absolute",
-    top: 50,
+    marginTop: 50,
   },
   logo: {
     width: 120,
@@ -137,22 +180,17 @@ const styles = StyleSheet.create({
     color: "#fff5e6",
     marginTop: 10,
     fontFamily: "outfit-bold",
-    position: "absolute",
     textAlign: "center",
-    width: "100%",
-    top: "94%",
-    transform: [{ translateY: -12 }],
   },
   contentContainer: {
     width: "100%",
     alignItems: "center",
-    paddingTop: 70,
-    
+    paddingTop: 10,
   },
   title: {
     fontSize: 47,
     fontWeight: "bold",
-    color: "#ffb84d",
+    color: "#FFA500",
     marginBottom: 5,
     fontFamily: "outfit-bold",
   },
@@ -172,23 +210,29 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     fontFamily: "outfit",
   },
-  textInput: {
-    height: 44,
+  inputWrapper: {
     borderWidth: 2,
-    borderColor: "#FF9900",
+    borderColor: "#8B4513",
     borderRadius: 10,
-    paddingHorizontal: 10,
     backgroundColor: "#ffebcc",
+    paddingHorizontal: 10,
+    height: 44,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  textInput: {
     color: "#000",
+    fontSize: 16,
+    paddingVertical: 0,
   },
   button: {
-    backgroundColor: "#FF9900",
+    backgroundColor: "#8B4513",
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: "center",
     marginVertical: 10,
     height: 44,
-    width: "90%",
+    width: "100%",
   },
   buttonText: {
     color: "#FFFFFF",
