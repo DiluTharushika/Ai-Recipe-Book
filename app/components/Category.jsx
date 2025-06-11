@@ -65,12 +65,13 @@ export default function Category({ recipes = [], searchQuery = '' }) {
     const prepareAIRecipes = async () => {
       if (!generatedRecipes || generatedRecipes.length === 0 || aiRecipesWithImages.length > 0) return;
 
-      const firestoreIds = new Set(allRecipes.map(r => r.id));
-      const firestoreTitles = new Set(allRecipes.map(r => r.title || r.name || ''));
+      const firestoreTitles = new Set(
+        allRecipes.map(r => ((r.title || r.name || '').trim().toLowerCase()))
+      );
 
       const filteredGenerated = generatedRecipes.filter(r => {
-        const title = r.title || r.name || '';
-        return !firestoreIds.has(r.id) && !firestoreTitles.has(title);
+        const title = (r.title || r.name || '').trim().toLowerCase();
+        return title && !firestoreTitles.has(title);
       });
 
       const updated = await Promise.all(
@@ -116,15 +117,29 @@ export default function Category({ recipes = [], searchQuery = '' }) {
   };
 
   const filteredRecipes = (() => {
-    let baseRecipes = selectedCategory === 'All'
-      ? [...aiRecipesWithImages, ...allRecipes]
-      : selectedCategory === 'AI Generated'
-        ? aiRecipesWithImages
-        : allRecipes.filter(
-            (recipe) => recipe.category?.toLowerCase() === selectedCategory.toLowerCase()
-          );
+    let baseRecipes;
 
-    // Filter by search query
+    if (selectedCategory === 'All') {
+      const allCombined = [...aiRecipesWithImages, ...allRecipes];
+
+      // Remove duplicates by comparing normalized title
+      const seenTitles = new Set();
+      baseRecipes = allCombined.filter((r) => {
+        const title = (r.title || r.name || '').trim().toLowerCase();
+        if (!title || seenTitles.has(title)) return false;
+        seenTitles.add(title);
+        return true;
+      });
+
+    } else if (selectedCategory === 'AI Generated') {
+      baseRecipes = aiRecipesWithImages;
+    } else {
+      baseRecipes = allRecipes.filter(
+        (recipe) =>
+          recipe.category?.toLowerCase() === selectedCategory.toLowerCase()
+      );
+    }
+
     if (searchQuery.trim() !== '') {
       const q = searchQuery.toLowerCase();
       baseRecipes = baseRecipes.filter(
@@ -132,7 +147,7 @@ export default function Category({ recipes = [], searchQuery = '' }) {
       );
     }
 
-    return Array.from(new Map(baseRecipes.map(r => [(r.title || r.name || '').toLowerCase(), r])).values());
+    return baseRecipes;
   })();
 
   return (

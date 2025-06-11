@@ -6,7 +6,6 @@ import {
   ScrollView,
   ActivityIndicator,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -27,9 +26,10 @@ export default function RecipeDetail() {
   const [creatorNames, setCreatorNames] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // New state for comments (per recipe)
+  // Comments and rating states
   const [comments, setComments] = useState([]);
   const [loadingComments, setLoadingComments] = useState(false);
+  const [averageCommentRating, setAverageCommentRating] = useState(null);
 
   const fetchPixabayImage = async (query) => {
     try {
@@ -144,7 +144,7 @@ export default function RecipeDetail() {
     parseAndSetRecipes();
   }, [id, recipeParam]);
 
-  // Fetch comments from Firestore for a recipe
+  // Fetch comments from Firestore for a recipe, and calculate average rating
   const fetchComments = async (recipeId) => {
     setLoadingComments(true);
     try {
@@ -160,11 +160,31 @@ export default function RecipeDetail() {
         ...doc.data(),
         timestamp: doc.data().timestamp ? doc.data().timestamp.toDate() : null,
       }));
+
       setComments(commentsData);
+
+      // Calculate average rating from comments if ratings exist
+      const ratings = commentsData
+        .map(c => c.rating)
+        .filter(r => typeof r === 'number' && r >= 0);
+      if (ratings.length > 0) {
+        const avg = ratings.reduce((a, b) => a + b, 0) / ratings.length;
+        setAverageCommentRating(avg);
+      } else {
+        setAverageCommentRating(null);
+      }
+
     } catch (error) {
       console.warn('Error fetching comments:', error);
     } finally {
       setLoadingComments(false);
+    }
+  };
+
+  // Refresh handler to reload comments & ratings
+  const onRefreshComments = () => {
+    if (recipes && recipes[0] && recipes[0].id) {
+      fetchComments(recipes[0].id);
     }
   };
 
@@ -212,182 +232,208 @@ export default function RecipeDetail() {
     );
   }
 
-  // Render one recipe at a time (assuming usually only 1)
+  // Render one recipe at a time (usually only 1)
   const item = recipes[0];
   const creatorName = creatorNames[0] || 'Unknown';
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.recipeCard}>
-        <Image source={{ uri: item.image || AI_PLACEHOLDER_IMAGE }} style={styles.image} />
-
-        <View style={styles.iconRow}>
-          <TouchableOpacity style={styles.iconWrapper} onPress={() => handleAddToCart(item)}>
-            <Ionicons name="cart-outline" size={24} color="#f4c38d" />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.iconWrapper} onPress={() => handleGoToComments(item.id)}>
-            <Ionicons name="chatbubble-outline" size={24} color="#f4c38d" />
-          </TouchableOpacity>
-
-          <View style={styles.starCircle}>
-            <Text style={styles.starMark}>★</Text>
-          </View>
-        </View>
-
-        <Text style={styles.title}>{item.name || item.title || 'Unnamed Recipe'}</Text>
-        <Text style={styles.category}>Category: {item.category || 'Unknown'}</Text>
-        <Text style={styles.createdBy}>Created by: {creatorName}</Text>
-
-        <Text style={styles.sectionTitle}>Rating:</Text>
-        <View style={styles.inlineRating}>
-          {renderStars(item.rating || 0)}
-          <Text style={styles.ratingText}>{item.rating ? item.rating.toFixed(1) : 'No rating'}</Text>
-        </View>
-
-        <Text style={styles.sectionTitle}>Ingredients:</Text>
-        {Array.isArray(item.ingredients) && item.ingredients.length > 0 ? (
-          item.ingredients.map((ingredient, i) => (
-            <View key={i} style={styles.ingredientItem}>
-              <Text style={styles.ingredientText}>
-                • {ingredient.ingredientName || ingredient || 'Unnamed'} ({ingredient.ingredientMeasurement || 'N/A'})
-              </Text>
-            </View>
-          ))
-        ) : (
-          <Text style={{ color: '#fff' }}>No ingredients listed.</Text>
-        )}
-
-        <Text style={styles.sectionTitle}>Instructions:</Text>
-        <Text style={styles.instructionText}>{item.instructions || 'No instructions provided.'}</Text>
-
-        {/* Comments Section */}
-        <Text style={styles.sectionTitle}>Comments:</Text>
-        {loadingComments ? (
-          <ActivityIndicator color="#f4c38d" />
-        ) : comments.length === 0 ? (
-          <Text style={{ color: '#aaa', fontStyle: 'italic' }}>No comments yet. Be the first!</Text>
-        ) : (
-          comments.map((comment) => (
-            <View key={comment.id} style={styles.commentItem}>
-              <Text style={styles.commentUser}>{comment.username || 'Anonymous'}</Text>
-              <Text style={styles.commentText}>{comment.comment}</Text>
-              <Text style={styles.commentTime}>
-                {comment.timestamp ? comment.timestamp.toLocaleString() : ''}
-              </Text>
-            </View>
-          ))
-        )}
+    <View style={styles.container}>
+      {/* Header with refresh button */}
+      <View style={styles.headerRow}>
+        <Text style={styles.headerTitle}>Recipe Details</Text>
+        <TouchableOpacity onPress={onRefreshComments} style={styles.refreshButton} accessibilityLabel="Refresh Comments">
+          <Ionicons name="refresh" size={28} color="#f4c38d" />
+        </TouchableOpacity>
       </View>
-    </ScrollView>
+
+      <ScrollView>
+        <View style={styles.recipeCard}>
+          <Image source={{ uri: item.image || AI_PLACEHOLDER_IMAGE }} style={styles.image} />
+
+          <View style={styles.iconRow}>
+            <TouchableOpacity style={styles.iconWrapper} onPress={() => handleAddToCart(item)}>
+              <Ionicons name="cart-outline" size={24} color="#f4c38d" />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.iconWrapper} onPress={() => handleGoToComments(item.id)}>
+              <Ionicons name="chatbubble-outline" size={24} color="#f4c38d" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.starCircle}
+              onPress={() => navigation.navigate('Screens/Rating', { recipeId: item.id })}
+            >
+              <Text style={styles.starMark}>★</Text>
+            </TouchableOpacity>
+          </View>
+
+          <Text style={styles.title}>{item.name || item.title || 'Unnamed Recipe'}</Text>
+          <Text style={styles.category}>Category: {item.category || 'Unknown'}</Text>
+          <Text style={styles.createdBy}>Created by: {creatorName}</Text>
+
+          <Text style={styles.sectionTitle}>Rating:</Text>
+          <View style={styles.inlineRating}>
+            {renderStars(averageCommentRating !== null ? averageCommentRating : (item.rating || 0))}
+            <Text style={styles.ratingText}>
+              {averageCommentRating !== null
+                ? averageCommentRating.toFixed(1)
+                : item.rating
+                ? item.rating.toFixed(1)
+                : 'No rating'}
+            </Text>
+          </View>
+
+          <Text style={styles.sectionTitle}>Ingredients:</Text>
+          {Array.isArray(item.ingredients) && item.ingredients.length > 0 ? (
+            item.ingredients.map((ingredient, i) => (
+              <View key={i} style={styles.ingredientItem}>
+                <Text style={styles.ingredientText}>
+                  • {ingredient.ingredientName || ingredient || 'Unnamed'} ({ingredient.ingredientMeasurement || 'N/A'})
+                </Text>
+              </View>
+            ))
+          ) : (
+            <Text style={{ color: '#fff' }}>No ingredients listed.</Text>
+          )}
+
+          <Text style={styles.sectionTitle}>Instructions:</Text>
+          <Text style={styles.instructions}>{item.instructions || 'No instructions provided.'}</Text>
+
+          <Text style={styles.sectionTitle}>Comments and Ratings:</Text>
+          {loadingComments ? (
+            <ActivityIndicator color="#f4c38d" />
+          ) : comments.length === 0 ? (
+            <Text style={{ color: '#aaa', fontStyle: 'italic' }}>No comments yet. Be the first!</Text>
+          ) : (
+            comments.map((comment) => (
+              <View key={comment.id} style={styles.commentItem}>
+                <Text style={styles.commentUser}>{comment.username || 'Anonymous'}</Text>
+
+                {typeof comment.rating === 'number' && comment.rating >= 0 && (
+                  <View style={styles.inlineRating}>
+                    {renderStars(comment.rating)}
+                    <Text style={[styles.ratingText, { fontSize: 14 }]}>{comment.rating.toFixed(1)}</Text>
+                  </View>
+                )}
+
+                <Text style={styles.commentText}>{comment.comment}</Text>
+                <Text style={styles.commentTime}>
+                  {comment.timestamp ? comment.timestamp.toLocaleString() : ''}
+                </Text>
+              </View>
+            ))
+          )}
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1e1e1e',
-    padding: 20,
+    backgroundColor: '#222831',
+    padding: 10,
   },
-  centered: {
-    flex: 1,
-    backgroundColor: '#1e1e1e',
-    justifyContent: 'center',
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 10,
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#f4c38d',
+  },
+  refreshButton: {
+    padding: 6,
   },
   recipeCard: {
-    marginBottom: 30,
+    backgroundColor: '#393e46',
+    borderRadius: 8,
+    padding: 15,
   },
   image: {
     width: '100%',
     height: 220,
-    borderRadius: 12,
-    marginBottom: 15,
-    backgroundColor: '#333',
+    borderRadius: 8,
+    marginBottom: 12,
   },
   iconRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#2b2a29',
-    padding: 10,
-    borderRadius: 10,
-    marginBottom: 15,
+    marginBottom: 10,
   },
   iconWrapper: {
-    backgroundColor: '#3a3a3a',
-    padding: 8,
-    borderRadius: 25,
+    marginRight: 20,
   },
   starCircle: {
-    backgroundColor: '#3a3a3a',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    backgroundColor: '#f4c38d',
+    borderRadius: 25,
+    width: 35,
+    height: 35,
     justifyContent: 'center',
     alignItems: 'center',
   },
   starMark: {
-    fontSize: 22,
-    color: '#f4c38d',
+    color: '#222831',
     fontWeight: 'bold',
+    fontSize: 20,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontSize: 24,
+    fontWeight: '700',
     color: '#f4c38d',
-    marginBottom: 8,
+    marginBottom: 5,
   },
   category: {
-    color: '#d2b48c',
     fontSize: 16,
-    marginBottom: 6,
+    color: '#eaeaea',
+    marginBottom: 3,
   },
   createdBy: {
-    color: '#aaa',
-    fontSize: 15,
-    marginBottom: 20,
-    fontStyle: 'italic',
+    fontSize: 14,
+    color: '#d4c89f',
+    marginBottom: 15,
   },
   sectionTitle: {
     fontSize: 18,
+    fontWeight: '600',
     color: '#f4c38d',
-    marginTop: 10,
-    marginBottom: 10,
-    fontWeight: 'bold',
-  },
-  ingredientItem: {
-    marginBottom: 6,
-  },
-  ingredientText: {
-    color: '#fff',
-    fontSize: 16,
-  },
-  instructionText: {
-    color: '#fff',
-    fontSize: 16,
-    lineHeight: 22,
+    marginVertical: 8,
   },
   inlineRating: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 8,
   },
   ratingText: {
+    marginLeft: 8,
     color: '#f4c38d',
-    marginLeft: 6,
-    fontWeight: 'bold',
-    fontSize: 16,
+    fontWeight: '600',
+  },
+  ingredientItem: {
+    marginLeft: 10,
+    marginBottom: 4,
+  },
+  ingredientText: {
+    color: '#fff',
+    fontSize: 14,
+  },
+  instructions: {
+    color: '#fff',
+    fontSize: 14,
+    lineHeight: 20,
   },
   commentItem: {
-    backgroundColor: '#2b2a29',
-    padding: 12,
-    borderRadius: 8,
+    backgroundColor: '#2a2f36',
+    padding: 10,
+    borderRadius: 6,
     marginBottom: 10,
   },
   commentUser: {
-    fontWeight: 'bold',
     color: '#f4c38d',
+    fontWeight: '700',
     marginBottom: 4,
   },
   commentText: {
@@ -395,9 +441,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   commentTime: {
-    color: '#aaa',
-    fontSize: 12,
+    fontSize: 10,
+    color: '#888',
     marginTop: 6,
-    fontStyle: 'italic',
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
