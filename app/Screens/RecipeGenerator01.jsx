@@ -74,7 +74,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#1e1e1e",
-    padding: 20,
+    padding: 25,
+    paddingTop:45,
+    
   },
   question: {
     color: "#f4c38d",

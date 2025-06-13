@@ -67,7 +67,7 @@ export default function RecipeGenerator03() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#1e1e1e", padding: 20 },
+  container: { flex: 1, backgroundColor: "#1e1e1e", padding: 25,paddingTop:45 },
   question: {
     color: "#f4c38d",
     fontSize: 20,

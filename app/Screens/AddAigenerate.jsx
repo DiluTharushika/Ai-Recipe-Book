@@ -164,8 +164,9 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: "#262626",
     padding: 20,
-    paddingBottom: 40,
+    padding: 25,
     flexGrow: 1,
+    paddingTop:40
   },
   title: {
     fontSize: 24,
