@@ -4,19 +4,13 @@ import {
   TouchableOpacity,
   StyleSheet,
   TouchableWithoutFeedback,
-  FlatList,
-  ActivityIndicator,
 } from 'react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db, auth } from '../../config/firebaseConfig';
 
 const Add = () => {
   const [showOptions, setShowOptions] = useState(false);
-  const [userRecipes, setUserRecipes] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   const handleOutsidePress = () => {
     if (showOptions) {
@@ -24,45 +18,10 @@ const Add = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchUserRecipes = async () => {
-      try {
-        const user = auth.currentUser;
-        if (!user) return;
-
-        const q = query(
-          collection(db, 'recipes'),
-          where('createdBy', '==', user.uid)
-        );
-        const querySnapshot = await getDocs(q);
-        const recipes = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setUserRecipes(recipes);
-      } catch (error) {
-        console.error('Error fetching user recipes:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserRecipes();
-  }, []);
-
-  const renderRecipeItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.recipeCard}
-      onPress={() => router.push({ pathname: 'Screens/RecipeView', params: { recipeId: item.id } })}
-    >
-      <Text style={styles.recipeTitle}>{item.name}</Text>
-    </TouchableOpacity>
-  );
-
   return (
     <TouchableWithoutFeedback onPress={handleOutsidePress}>
       <View style={styles.container}>
-        {/* Header with Title and Plus Button */}
+        {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>My Recipes</Text>
           <TouchableOpacity
@@ -71,8 +30,9 @@ const Add = () => {
               e.stopPropagation();
               setShowOptions(!showOptions);
             }}
+            activeOpacity={0.8}
           >
-            <Ionicons name="add" size={28} color="white" />
+            <Ionicons name="add" size={32} color="white" />
           </TouchableOpacity>
         </View>
 
@@ -103,20 +63,13 @@ const Add = () => {
           </View>
         )}
 
-        {/* User Recipes List */}
-        {loading ? (
-          <ActivityIndicator size="large" color="#ffaa00" style={{ marginTop: 20 }} />
-        ) : (
-          <FlatList
-            data={userRecipes}
-            keyExtractor={(item) => item.id}
-            renderItem={renderRecipeItem}
-            contentContainerStyle={{ paddingTop: 10 }}
-            ListEmptyComponent={
-              <Text style={styles.noRecipesText}>You haven't added any recipes yet.</Text>
-            }
-          />
-        )}
+        {/* Placeholder when no recipes exist */}
+        <View style={styles.placeholderContainer}>
+          <Ionicons name="restaurant-outline" size={60} color="#888" style={{ marginBottom: 10 }} />
+          <Text style={styles.placeholderText}>
+            No recipes found. Use the + button to create your own or let AI cook for you!
+          </Text>
+        </View>
       </View>
     </TouchableWithoutFeedback>
   );
@@ -142,17 +95,26 @@ const styles = StyleSheet.create({
   },
   plusButton: {
     backgroundColor: '#8B4513',
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 54,              // bigger button
+    height: 54,
+    borderRadius: 27,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 10,
+
+    // Highlight Glow:
+    shadowColor: '#FFD700', // gold glow color
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 10,
+    elevation: 10,          // for Android shadow
+    borderWidth: 2,
+    borderColor: '#FFD700',
   },
   optionsContainer: {
     position: 'absolute',
     right: 20,
-    top: 70,
+    top: 80,
     backgroundColor: '#363636',
     borderRadius: 8,
     paddingVertical: 8,
@@ -178,25 +140,17 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
   },
-  recipeCard: {
-    backgroundColor: '#333',
-    padding: 16,
-    borderRadius: 10,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.3,
+  placeholderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  recipeTitle: {
-    fontSize: 18,
-    color: '#fff',
-    fontWeight: '600',
-  },
-  noRecipesText: {
-    color: '#999',
+  placeholderText: {
+    color: '#aaa',
     fontSize: 16,
     textAlign: 'center',
-    marginTop: 20,
+    lineHeight: 24,
+    paddingHorizontal: 10,
   },
 });
 

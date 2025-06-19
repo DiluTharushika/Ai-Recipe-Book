@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     color: "#fff5e6",
-    marginTop: 10,
+    marginTop: 0,
     fontFamily: "outfit-bold",
   },
   contentContainer: {
