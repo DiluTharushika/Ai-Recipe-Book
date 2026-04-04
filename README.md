@@ -1,50 +1,124 @@
-# Welcome to your Expo app 👋
+# 🍳 AI Recipe Book 🤖
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+An intelligent mobile application that helps users discover, create, and manage recipes using AI. Built with modern technologies like React Native, Expo, Firebase, and Node.js.
 
-## Get started
+---
 
-1. Install dependencies
+## 🚀 Features
 
-   ```bash
-   npm install
-   ```
+✨ User Authentication
 
-2. Start the app
+* Sign Up & Login using Firebase Authentication
 
-   ```bash
-   npx expo start
-   ```
+🍽️ AI Recipe Generator
 
-In the output, you'll find options to open the app in a
+* Generate recipes based on user preferences (cuisine, ingredients, etc.)
+* Smart AI integration using API
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+📝 Create Your Own Recipes
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+* Users can add and save their own recipes
 
-## Get a fresh project
+💰 Recipe Cost Estimation
 
-When you're ready, run:
+* View estimated cost for each recipe
+
+⭐ Reviews & Ratings
+
+* Users can comment and rate recipes
+
+🛒 Shopping Support
+
+* Add ingredients to shopping list/cart
+
+📱 Modern UI
+
+* Clean and responsive mobile design using React Native Expo
+
+---
+
+## 🛠️ Tech Stack
+
+* ⚛️ React Native (Expo)
+* 🔥 Firebase (Authentication + Database)
+* 🌐 Node.js (Backend/API)
+* 🤖 AI API (Recipe Generation)
+* 💾 Firestore Database
+
+---
+
+## 📂 Project Structure
+
+app/ → Main application screens (Expo Router)
+components/ → Reusable UI components
+services/ → API and Firebase services
+context/ → Global state management
+assets/ → Images and icons
+config/ → Configuration files
+
+---
+
+## ⚙️ Installation & Setup
+
+1. Clone the repository
 
 ```bash
-npm run reset-project
+git clone https://github.com/DiluTharushika/Ai-Recipe-Book.git
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+2. Install dependencies
 
-## Learn more
+```bash
+npm install
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+3. Start the app
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```bash
+npx expo start
+```
 
-## Join the community
+---
 
-Join our community of developers creating universal apps.
+## 📸 Screenshots
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## 📸 Screenshots
+
+### 🔐 Login Screen
+![Login Screen](assets/images/ss1.jpg)
+
+### 🚀 Landing Screen
+![Landing Screen](assets/images/ss2.jpg)
+
+### 🏠 Home Screen
+![Home Screen](assets/images/ss0.jpg)
+
+### 📖 Recipe Detail Screen
+![Recipe Detail](assets/images/ss5.jpg)
+
+---
+
+## 🎯 Future Improvements
+
+* 🔍 Advanced search & filters
+* 🧠 Better AI recommendations
+* 📊 Nutrition tracking
+* 🌍 Multi-language support
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Feel free to fork and improve this project.
+
+---
+
+## 📧 Contact
+
+👩‍💻 Developed by **Dilu Tharushika**
+📬 Feel free to reach out for collaborations
+
+---
+
+
+
