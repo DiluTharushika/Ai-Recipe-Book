@@ -79,25 +79,22 @@ npx expo start
 ```
 
 ---
-
 ## 📸 Screenshots
 
-## 📸 Screenshots
+<p align="center">
+  <img src="assets/images/ss1.jpg" width="22%" />
+  <img src="assets/images/ss2.jpg" width="22%" />
+  <img src="assets/images/ss0.jpg" width="22%" />
+  <img src="assets/images/ss5.jpg" width="22%" />
+</p>
 
-### 🔐 Login Screen
-![Login Screen](assets/images/ss1.jpg)
-
-### 🚀 Landing Screen
-![Landing Screen](assets/images/ss2.jpg)
-
-### 🏠 Home Screen
-![Home Screen](assets/images/ss0.jpg)
-
-### 📖 Recipe Detail Screen
-![Recipe Detail](assets/images/ss5.jpg)
-
+<p align="center">
+  <b>Login</b> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <b>Landing</b> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <b>Home</b> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <b>Recipe Detail</b>
+</p>
 ---
-
 ## 🎯 Future Improvements
 
 * 🔍 Advanced search & filters
